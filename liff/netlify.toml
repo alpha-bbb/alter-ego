@@ -1,0 +1,6 @@
+[build]
+command = "yarn install && yarn build"
+publish = "dist"
+
+[template.environment]
+LIFF_ID = "2006595464-xg40E95E"

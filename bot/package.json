@@ -1,0 +1,26 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@line/bot-sdk": "^9.5.0",
+    "@types/aws-serverless-express": "^3.3.10",
+    "aws-serverless-express": "^3.4.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "nodemon": "^3.1.7",
+    "ts-dotenv": "^0.9.1"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "build:watch": "npx tsc --watch",
+    "start": "node dist/main.js",
+    "start:dev": "nodemon dist/main.js"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.6.3"
+  }
+}
