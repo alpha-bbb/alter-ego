@@ -1,0 +1,23 @@
+version: v1
+plugins:
+  # line_backend
+  - plugin: buf.build/bufbuild/es
+    out: ../line/backend/src/gen/grpc
+    opt: target=ts
+  - plugin: buf.build/bufbuild/connect-es
+    out: ../line/backend/src/gen/grpc
+    opt: target=ts
+  # backend
+  - plugin: buf.build/bufbuild/es
+    out: ../backend/src/gen/grpc
+    opt: target=ts
+  - plugin: buf.build/bufbuild/connect-es
+    out: ../backend/src/gen/grpc
+    opt: target=ts
+  # llm
+  - plugin: buf.build/bufbuild/es
+    out: ../llm/src/gen/grpc
+    opt: target=ts
+  - plugin: buf.build/bufbuild/connect-es
+    out: ../llm/src/gen/grpc
+    opt: target=ts
