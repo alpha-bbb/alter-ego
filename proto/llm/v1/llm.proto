@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package llm.v1;
+
+service LlmService {
+  rpc Talk(TalkRequest) returns (TalkResponse) {}
+}
+
+message TalkRequest {
+  enum ActionKind {
+    ACTION_KIND_UNSPECIFIED = 0; // 未定義
+    ACTION_KIND_END_CONVERSATION = 1; // 会話を終わらせる
+  }
+  TalkHistory history = 1; // 発言履歴
+  ActionKind action_kind = 2; // アクションの種類
+}
+
+message TalkHistory {
+  string date = 1; // ISO 8601 date format (2021-05-22T00:00:00Z)
+  User user = 2; // 発言したユーザー
+  string message = 3; // 発言内容
+}
+
+message User {
+  string user_id = 1; // ユーザーを一意に識別するID
+  string name = 2; // ユーザー名
+}
+
+message TalkResponse {
+  repeated string message = 1; // 候補のメッセージ
+}
