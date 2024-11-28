@@ -11,7 +11,7 @@ message TalkRequest {
     ACTION_KIND_UNSPECIFIED = 0; // 未定義
     ACTION_KIND_END_CONVERSATION = 1; // 会話を終わらせる
   }
-  TalkHistory history = 1; // 発言履歴
+  repeated TalkHistory histories = 1; // 発言履歴
   ActionKind action_kind = 2; // アクションの種類
 }
 
