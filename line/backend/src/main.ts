@@ -1,6 +1,6 @@
 import express from 'express';
-import { webhookHandler } from './functions/webhook';
-import { config } from './config';
+import { webhookHandler } from './functions/webhook.js';
+import { config } from './config.js';
 
 export const app = express();
 
