@@ -7,6 +7,7 @@ function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    liff.ready.then(() => {
     liff
       .init({
         liffId: import.meta.env.VITE_LIFF_ID
@@ -18,6 +19,7 @@ function App() {
         setMessage("LIFF init failed.");
         setError(`${e}`);
       });
+    })
   });
 
   const handleShareTargetPicker = () => {
@@ -28,6 +30,9 @@ function App() {
           text: "Hello, World!",
         },
       ]);
+    } else {
+      //「シェアターゲットピッカー」が無効になっている場合
+      setMessage("invalid")
     }
   };
 
