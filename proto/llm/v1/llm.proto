@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package llm.v1;
 
+option go_package = "/llm/v1"; // 修正: 実際のモジュールパスに置き換え
+
 service LlmService {
   rpc Talk(TalkRequest) returns (TalkResponse) {}
 }
