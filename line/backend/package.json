@@ -1,7 +1,7 @@
 {
   "name": "bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "license": "MIT",
   "type": "module",
   "dependencies": {
@@ -14,13 +14,15 @@
     "ts-dotenv": "^0.9.1"
   },
   "scripts": {
-    "build": "npx tsc",
-    "build:watch": "npx tsc --watch",
+    "build": "npx tsc && npx tsc-alias",
+    "build:watch": "concurrently \"npx tsc --watch\" \"npx tsc-alias --watch\"",
     "start": "node dist/main.js",
     "start:dev": "nodemon dist/main.js"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "concurrently": "^9.1.0",
+    "tsc-alias": "^1.8.10",
     "typescript": "^5.6.3"
   }
 }
