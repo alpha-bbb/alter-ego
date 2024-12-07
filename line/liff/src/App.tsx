@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import "./App.css";
+import { Button } from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import picture from "./images/alter-ego-pic.png";
 
 function App() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    liff.ready.then(() => {
+    // liff.ready.then(() => {
     liff
       .init({
         liffId: import.meta.env.VITE_LIFF_ID
@@ -19,7 +22,7 @@ function App() {
         setMessage("LIFF init failed.");
         setError(`${e}`);
       });
-    })
+    // })
   });
 
   const handleShareTargetPicker = () => {
@@ -38,21 +41,17 @@ function App() {
 
   return (
     <div className="App">
-      <h1>create-liff-app</h1>
+      <h1>Alter Ego</h1>
+      <img src={picture} alt="decoration" style={{ width: '50%', borderRadius: '10px' }} />
       {message && <p>{message}</p>}
       {error && (
         <p>
           <code>{error}</code>
         </p>
       )}
-      <a
-        href="https://developers.line.biz/ja/docs/liff/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        LIFF Documentation
-      </a>
-      <button onClick={handleShareTargetPicker}>Share Target Picker</button>
+      <Button onClick={handleShareTargetPicker} variant="contained" endIcon={<SendIcon />} size="large" sx={{ borderRadius: '20px', backgroundColor: '#469ac8', color: '#fff', width: '80%'  }}>
+        送信先の選択
+      </Button>
     </div>
   );
 }
