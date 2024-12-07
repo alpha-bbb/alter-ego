@@ -8,12 +8,11 @@ plugins:
     out: ../line/backend/src/gen/grpc
     opt: target=ts
   # backend
-  - plugin: buf.build/protocolbuffers/go
-    out: ../llm/src/gen/grpc
+  - name: go
+    out: ../backend/gen/grpc
     opt: paths=source_relative
-
-  - plugin: buf.build/connectrpc/go
-    out: ../llm/src/gen/grpc
+  - name: go-grpc
+    out: ../backend/gen/grpc
     opt: paths=source_relative
   # llm
   - plugin: buf.build/bufbuild/es
