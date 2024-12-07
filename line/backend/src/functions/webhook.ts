@@ -1,6 +1,7 @@
 import { messagingApi } from '@line/bot-sdk';
 import type { Request, Response } from 'express';
 import { config } from '../config.js';
+import * as https from "https";
 
 const { MessagingApiClient } = messagingApi;
 
@@ -86,6 +87,19 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
 
                         const talkHistory = parseTalkHistory(talk);
                         console.log('talkHistory:' ,talkHistory);
+                        if (talkHistory){
+                            const options = {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            };
+                            // TODO: POST先欲しいです
+                            const url = "https://hogehoge"
+                            const request = https.request(url, options);
+                            request.write(talkHistory);
+                            request.end();
+                        }
                     } catch (e) {
                         console.log('Error', e);
                     }
