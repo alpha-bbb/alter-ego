@@ -6,14 +6,8 @@ const { MessagingApiClient } = messagingApi;
 
 const client = new MessagingApiClient(config.line.messagingApiClient);
 
-
-// type User = {
-// // user_id: string; //TODO: 【確認】talk履歴からだと相手のuser_idは取得できない？こちらでuuidを割り振る？
-// name: string;
-// };
-
 type User = {
-    // user_id: string; //TODO: 【確認】talk履歴からだと相手のuser_idは取得できない？こちらでuuidを割り振る？
+    // user_id: string; //TODO: 【要検討】talk履歴からだと相手のuser_idは取得できない
     name: string; // ユーザー名
 };
 
@@ -23,10 +17,10 @@ user: User;
 message: string;
 };
 
-function parseLineTalkHistory(talk: string): TalkHistory[] {
+function parseTalkHistory(talk: string): TalkHistory[] {
 const lines = talk.split("\n");
 const talkHistory: TalkHistory[] = [];
-let talkDate: string | null = null; // 現在のメッセージの日付
+let talkDate: string | null = null;
 
 lines.forEach(line => {
     const trimmedLine = line.trim();
@@ -66,7 +60,6 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
                         replyToken: e.replyToken,
                         messages: [
                             { type: 'text', text: e.message.text },
-                            { type: 'text', text: 'hoge'},
                         ],
                     });
                 }
@@ -74,12 +67,11 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
                     console.log('res:', e);
                     try {
                         const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`
-                        const accessToken = 'o4t50dLq7Gkhg300mo6qQxSpRCk9af2Pt4alDsj80y7+BgoSnpKRXAnU53Y5ok2A7QyabweFvERSJWr2q9Iy/CM/iq2YRN/t2RpHedz0CS377cJyvh9ehc+MqcmaK1f1hB9jpobeSlOzbYwnVlUjLgdB04t89/1O/w1cDnyilFU=';
-
+                        console.log("env token", config.line.messagingApiClient.channelAccessToken)
                         const response = await fetch(endpoint, {
                             method: 'GET',
                             headers: {
-                                Authorization: `Bearer ${accessToken}`
+                                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`
                             }
                         });
                         if (!response.ok) {
@@ -92,8 +84,8 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
                         const talk = decoder.decode(buffer);
                         console.log('file contents:', talk);
 
-                        const talkHistorys = parseLineTalkHistory(talk);
-                        console.log('talkHistory:' ,talkHistorys);
+                        const talkHistory = parseTalkHistory(talk);
+                        console.log('talkHistory:' ,talkHistory);
                     } catch (e) {
                         console.log('Error', e);
                     }
