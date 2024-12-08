@@ -21,5 +21,6 @@
         "quickfix.biome": "explicit",
         "source.organizeImports.biome": "explicit"
     },
-    "biome.enabled": true
+    "biome.enabled": true,
+    "go.lintTool": "golangci-lint",
 }
