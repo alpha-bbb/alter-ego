@@ -61,10 +61,10 @@ func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*ll
 
 func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
     // gRPC サーバーのアドレス
-    const serverAddress = "localhost:50051"
+    const llmServerAddress = "localhost:8080"
 
     // gRPC クライアントを作成
-    client, cleanup, err := newGRPCClient(serverAddress)
+    client, cleanup, err := newGRPCClient(llmServerAddress)
     if err != nil {
         log.Fatalf("failed to create gRPC client: %v", err)
     }
@@ -126,8 +126,8 @@ func NewBackendServer() *BackendServer {
 }
 
 func main() {
-	// 1. 8080番portのLisnterを作成
-	port := 8080
+	// 1. 50051番portのLisnterを作成
+	port := 50051
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
