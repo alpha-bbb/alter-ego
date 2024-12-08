@@ -7,10 +7,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 
-	"github.com/alpha-bbb/alter-ego/backend/entity"
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
+	llmpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/llm/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -18,26 +20,79 @@ type BackendServer struct {
 	backendpb.UnimplementedBackendServiceServer
 }
 
-func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []entity.TalkHistory {
-	res := make([]entity.TalkHistory, len(req.Histories))
+func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*llmpb.TalkHistory {
+	res := make([]*llmpb.TalkHistory, len(req.Histories))
 	for i := 0; i < len(req.Histories); i++ {
-        res[i] = entity.TalkHistory{
-			Date:    req.Histories[i].Date,
-			User:    entity.User{
-				UserID:   req.Histories[i].User.UserId,
-				Name: req.Histories[i].User.Name,
+		res[i] = &llmpb.TalkHistory{
+			Date: req.Histories[i].Date,
+			User: &llmpb.User{
+				UserId: req.Histories[i].User.UserId,
+				Name:   req.Histories[i].User.Name,
 			},
 			Message: req.Histories[i].Message,
 		}
-    }
+	}
 	return res
 }
-
 func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
-	fmt.Printf("%w",(ConvertTalkHistoryFromGRPCTalkRequest(req)))
-	return &backendpb.TalkResponse{
-		Message: []string{"Hello"},
-	}, nil
+    // gRPC サーバーのアドレス
+    const serverAddress = "localhost:50051"
+
+    // gRPC クライアントを作成
+    client, cleanup, err := newGRPCClient(serverAddress)
+    if err != nil {
+        log.Fatalf("failed to create gRPC client: %v", err)
+    }
+    defer cleanup()
+
+    // LlmServiceのTalkメソッドを呼び出す
+    llmResponse, err := callCheck(client, req)
+    if err != nil {
+        return nil, fmt.Errorf("failed to call llmService.Talk: %v", err)
+    }
+
+    // BackendServiceのレスポンスとしてllmResponseからメッセージを設定
+    return &backendpb.TalkResponse{
+		Message: llmResponse.Message,
+    }, nil
+}
+
+// newGRPCClient は、新しい gRPC クライアントを作成します
+func newGRPCClient(serverAddress string) (llmpb.LlmServiceClient, func(), error) {
+    // サーバーへ接続
+	conn, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        return nil, nil, err
+    }
+
+    // クリーンアップ関数を定義
+    cleanup := func() {
+        if err := conn.Close(); err != nil {
+            log.Printf("failed to close connection: %v", err)
+        }
+    }
+
+    // LlmServiceClient を作成して返却
+    return llmpb.NewLlmServiceClient(conn), cleanup, nil
+}
+
+// Check メソッドの実行
+// Check メソッドの実行
+func callCheck(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (*llmpb.TalkResponse, error) {
+    // タイムアウトを設定
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+    defer cancel()
+
+    llmRequest := &llmpb.TalkRequest{
+        Histories: ConvertTalkHistoryFromGRPCTalkRequest(req),
+    }
+
+    res, err := client.Talk(ctx, llmRequest)
+    if err != nil {
+        return nil, err
+    }
+
+    return res, nil
 }
 
 func NewBackendServer() *BackendServer {
