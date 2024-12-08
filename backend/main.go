@@ -37,11 +37,13 @@ func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*entity
             Message: req.Histories[index].Message,
         }
     }
+    println("🟥", result)
     return result
 }
 
 func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*llmpb.TalkHistory {
     if histories == nil {
+        println("🟦 histories are not defined", )
         return nil
     }
 
@@ -56,6 +58,7 @@ func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*ll
             Message: histories[i].Message,
         }
     }
+    println("🟢", result)
     return result
 }
 
@@ -66,14 +69,14 @@ func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*
     // gRPC クライアントを作成
     client, cleanup, err := newGRPCClient(llmServerAddress)
     if err != nil {
-        log.Fatalf("failed to create gRPC client: %v", err)
+        log.Fatalf("🟨 failed to create gRPC client: %v", err)
     }
     defer cleanup()
 
     // LlmServiceのTalkメソッドを呼び出す
     llmResponse, err := callLlmService(client, req)
     if err != nil {
-        return nil, fmt.Errorf("failed to call llmService.Talk: %v", err)
+        return nil, fmt.Errorf("🟪 failed to call llmService.Talk: %v", err)
     }
 
     // BackendServiceのレスポンスとしてllmResponseからメッセージを設定
@@ -87,13 +90,14 @@ func newGRPCClient(serverAddress string) (llmpb.LlmServiceClient, func(), error)
     // サーバーへ接続
 	conn, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
+        println("🤍", err)
         return nil, nil, err
     }
 
     // クリーンアップ関数を定義
     cleanup := func() {
         if err := conn.Close(); err != nil {
-            log.Printf("failed to close connection: %v", err)
+            log.Printf("🟧 failed to close connection: %v", err)
         }
     }
 
@@ -104,7 +108,8 @@ func newGRPCClient(serverAddress string) (llmpb.LlmServiceClient, func(), error)
 // callLlmService は、LlmServiceのTalkメソッドを呼び出します
 func callLlmService(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (*llmpb.TalkResponse, error) {
 	// タイムアウトを設定
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
+    println("🟣", "Time Out")
 	defer cancel()
 
 	entityTalkHistory := ConvertTalkHistoryFromGRPCTalkRequest(req)
@@ -112,9 +117,11 @@ func callLlmService(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (
 	llmRequest := &llmpb.TalkRequest{
 		Histories: llmTalkHistory,
 	}
+    println(" 🟫", llmRequest)
 
 	res, err := client.Talk(ctx, llmRequest)
 	if err != nil {
+        println("🟦", err)
 		return nil, err
 	}
 
