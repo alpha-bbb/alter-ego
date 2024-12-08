@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package llm.v1;
 
+option go_package = "github.com/alpha-bbb/alter-ego/backend/gen/grpc/llm/v1";
+
 service LlmService {
   rpc Talk(TalkRequest) returns (TalkResponse) {}
 }
