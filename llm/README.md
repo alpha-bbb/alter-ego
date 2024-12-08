@@ -28,7 +28,6 @@ pnpm dev
 ## gRPCを直接叩くコマンド例
 
 ```sh
-cd proto
 buf curl --protocol grpc --http2-prior-knowledge \
   --schema ./proto \
   --data '{
