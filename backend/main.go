@@ -101,7 +101,7 @@ func newGRPCClient(serverAddress string) (llmpb.LlmServiceClient, func(), error)
     return llmpb.NewLlmServiceClient(conn), cleanup, nil
 }
 
-// Check メソッドの実行
+// callLlmService は、LlmServiceのTalkメソッドを呼び出します
 func callLlmService(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (*llmpb.TalkResponse, error) {
 	// タイムアウトを設定
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
