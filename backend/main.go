@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/alpha-bbb/alter-ego/backend/entity"
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 	llmpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/llm/v1"
 	"google.golang.org/grpc"
@@ -20,20 +21,44 @@ type BackendServer struct {
 	backendpb.UnimplementedBackendServiceServer
 }
 
-func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*llmpb.TalkHistory {
-	res := make([]*llmpb.TalkHistory, len(req.Histories))
-	for i := 0; i < len(req.Histories); i++ {
-		res[i] = &llmpb.TalkHistory{
-			Date: req.Histories[i].Date,
-			User: &llmpb.User{
-				UserId: req.Histories[i].User.UserId,
-				Name:   req.Histories[i].User.Name,
-			},
-			Message: req.Histories[i].Message,
-		}
-	}
-	return res
+func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*entity.TalkHistory {
+    if req == nil || req.Histories == nil {
+        return nil
+    }
+
+    result := make([]*entity.TalkHistory, len(req.Histories))
+    for index := range req.Histories {
+        result[index] = &entity.TalkHistory{
+            Date: req.Histories[index].Date,
+            User: entity.User{
+                UserID: req.Histories[index].User.UserId,
+                Name:   req.Histories[index].User.Name,
+            },
+            Message: req.Histories[index].Message,
+        }
+    }
+    return result
 }
+
+func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*llmpb.TalkHistory {
+    if histories == nil {
+        return nil
+    }
+
+    result := make([]*llmpb.TalkHistory, len(histories))
+    for i := range histories {
+        result[i] = &llmpb.TalkHistory{
+            Date: histories[i].Date,
+            User: &llmpb.User{
+                UserId: histories[i].User.UserID,
+                Name:   histories[i].User.Name,
+            },
+            Message: histories[i].Message,
+        }
+    }
+    return result
+}
+
 func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
     // gRPC サーバーのアドレス
     const serverAddress = "localhost:50051"
@@ -46,7 +71,7 @@ func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*
     defer cleanup()
 
     // LlmServiceのTalkメソッドを呼び出す
-    llmResponse, err := callCheck(client, req)
+    llmResponse, err := callLlmService(client, req)
     if err != nil {
         return nil, fmt.Errorf("failed to call llmService.Talk: %v", err)
     }
@@ -77,22 +102,23 @@ func newGRPCClient(serverAddress string) (llmpb.LlmServiceClient, func(), error)
 }
 
 // Check メソッドの実行
-// Check メソッドの実行
-func callCheck(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (*llmpb.TalkResponse, error) {
-    // タイムアウトを設定
-    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-    defer cancel()
+func callLlmService(client llmpb.LlmServiceClient, req *backendpb.TalkRequest) (*llmpb.TalkResponse, error) {
+	// タイムアウトを設定
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-    llmRequest := &llmpb.TalkRequest{
-        Histories: ConvertTalkHistoryFromGRPCTalkRequest(req),
-    }
+	entityTalkHistory := ConvertTalkHistoryFromGRPCTalkRequest(req)
+	llmTalkHistory := ConvertTalkHistoryToGRPCTalkResponse(entityTalkHistory)
+	llmRequest := &llmpb.TalkRequest{
+		Histories: llmTalkHistory,
+	}
 
-    res, err := client.Talk(ctx, llmRequest)
-    if err != nil {
-        return nil, err
-    }
+	res, err := client.Talk(ctx, llmRequest)
+	if err != nil {
+		return nil, err
+	}
 
-    return res, nil
+	return res, nil
 }
 
 func NewBackendServer() *BackendServer {
