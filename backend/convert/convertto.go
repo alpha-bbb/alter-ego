@@ -7,7 +7,6 @@ import (
 
 func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*llmpb.TalkHistory {
     if histories == nil {
-        println("🟦 histories are not defined", )
         return nil
     }
 
@@ -22,6 +21,5 @@ func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*ll
             Message: histories[i].Message,
         }
     }
-    println("🟢", result)
     return result
 }

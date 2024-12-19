@@ -23,7 +23,7 @@ func main() {
         log.Fatalf("Error loading .env file")
     }
 
-    grpcClientAddress := os.Getenv("GRPC_CLIENT_ADDRESS")
+    grpcClientAddress := os.Getenv("LLM_GRPC_CLIENT_ADDRESS")
     port := os.Getenv("PORT")
 
     // Setup dependencies

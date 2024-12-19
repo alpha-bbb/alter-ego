@@ -11,16 +11,15 @@ func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*entity
     }
 
     result := make([]*entity.TalkHistory, len(req.Histories))
-    for index := range req.Histories {
-        result[index] = &entity.TalkHistory{
-            Date: req.Histories[index].Date,
+    for i := range req.Histories {
+        result[i] = &entity.TalkHistory{
+            Date: req.Histories[i].Date,
             User: entity.User{
-                UserID: req.Histories[index].User.UserId,
-                Name:   req.Histories[index].User.Name,
+                UserID: req.Histories[i].User.UserId,
+                Name:   req.Histories[i].User.Name,
             },
-            Message: req.Histories[index].Message,
+            Message: req.Histories[i].Message,
         }
     }
-    println("🟥", result)
     return result
 }
