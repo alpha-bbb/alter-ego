@@ -8,39 +8,47 @@ const { MessagingApiClient } = messagingApi;
 const client = new MessagingApiClient(config.line.messagingApiClient);
 
 type User = {
-    // user_id: string; //TODO: 【要検討】talk履歴からだと相手のuser_idは取得できない
+    user_id: string;
     name: string; // ユーザー名
 };
 
-type TalkHistory = {
+type TalkHistories = {
 date: string;
 user: User;
 message: string;
 };
 
-function parseTalkHistory(talk: string): TalkHistory[] {
-const lines = talk.split("\n");
-const talkHistory: TalkHistory[] = [];
+function parseTalkHistories(talk: string, hostUserName:string): TalkHistories[] {
+const rows = talk.split("\n");
+const TalkHistories: TalkHistories[] = [];
 let talkDate: string | null = null;
 
-lines.forEach(line => {
-    const trimmedLine = line.trim();
+rows.forEach(row => {
+    const trimmedRow = row.trim();
     // 日付
-    const dateMatch = trimmedLine.match(/^(\d{4}\/\d{2}\/\d{2})/);
+    const dateMatch = trimmedRow.match(/^(\d{4}\/\d{2}\/\d{2})/);
     if (dateMatch) {
     talkDate = dateMatch[1].replace(/\//g, "-"); // YYYY-MM-DD
     return;
     }
 
     // メッセージ（例: "22:07   Test    おはよう"）
-    const messageMatch = trimmedLine.match(/^(\d{2}:\d{2})\s+([^ ]+)?\s+(.+)$/);
+    const messageMatch = trimmedRow.match(/^(\d{2}:\d{2})\t+([^\t]+)?\t+(.+)$/);
     if (messageMatch && talkDate) {
         const [_, time, userName, message] = messageMatch;
-        const dateTime = `${talkDate}T${time}:00Z`; // ISO 8601形式
+        const dateTime = `${talkDate}T${time}::00+0900`; // ISO 8601形式
 
-        talkHistory.push({
+        const name = userName || "Unknown";
+        const user_id =
+        name === hostUserName
+          ? `${hostUserName}01`
+          : name === "Unknown"
+          ? "Unknown"
+          : `${name}02`;
+
+        TalkHistories.push({
         date: dateTime,
-        user: { name: userName || "Unknown" },
+        user: { name, user_id },
         message,
         });
     }else {
@@ -48,7 +56,7 @@ lines.forEach(line => {
     }
 });
 
-return talkHistory;
+return TalkHistories;
 }
 
 export const webhookHandler = async (req: Request, res: Response): Promise<void> => {
@@ -84,10 +92,16 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
                         const decoder = new TextDecoder('utf-8');
                         const talk = decoder.decode(buffer);
                         console.log('file contents:', talk);
+                        const match = talk.match(/\[LINE\] (.*?)とのトーク履歴/);
+                        let hostUserName = "noName";
+                        if (match && match[1]) {
+                            hostUserName = match[1];
+                            console.log("Hostname:",hostUserName);
+                        }
 
-                        const talkHistory = parseTalkHistory(talk);
-                        console.log('talkHistory:' ,talkHistory);
-                        if (talkHistory){
+                        const TalkHistories = parseTalkHistories(talk, hostUserName);
+                        console.log('TalkHistories:' ,TalkHistories);
+                        if (TalkHistories){
                             const options = {
                             method: "POST",
                             headers: {
@@ -97,7 +111,7 @@ export const webhookHandler = async (req: Request, res: Response): Promise<void>
                             // TODO: POST先欲しいです
                             const url = "https://hogehoge"
                             const request = https.request(url, options);
-                            request.write(talkHistory);
+                            request.write(TalkHistories);
                             request.end();
                         }
                     } catch (e) {
