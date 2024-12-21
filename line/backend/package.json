@@ -5,6 +5,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@bufbuild/protobuf": "^2.2.3",
     "@line/bot-sdk": "^9.5.0",
     "@types/aws-serverless-express": "^3.3.10",
     "aws-serverless-express": "^3.4.0",
