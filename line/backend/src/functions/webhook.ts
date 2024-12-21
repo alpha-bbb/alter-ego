@@ -1,7 +1,6 @@
 import { config } from "@/config.js";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
-import * as https from "https";
 
 const { MessagingApiClient } = messagingApi;
 
@@ -9,7 +8,7 @@ const client = new MessagingApiClient(config.line.messagingApiClient);
 
 type User = {
   user_id: string;
-  name: string; // ユーザー名
+  name: string;
 };
 
 type TalkHistories = {
@@ -17,6 +16,34 @@ date: string;
 user: User;
 message: string;
 };
+
+async function sendTalkRequest(talkHistories: TalkHistories[]): Promise<void> {
+
+
+
+  const requestMessage = {
+    talkHistories,
+    actionKind: 1,
+  };
+
+  try {
+    const response = await fetch("http://localhost:3000/backend/v1/BackendService/Talk", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/protobuf",
+      },
+      body: JSON.stringify(requestMessage),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log("Response:", response);
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
 
 function parseTalkHistories(talk: string, hostUserName:string): TalkHistories[] {
 const rows = talk.split("\n");
@@ -107,17 +134,7 @@ export const webhookHandler = async (
             const TalkHistories = parseTalkHistories(talk, hostUserName);
             console.log('TalkHistories:' ,TalkHistories);
             if (TalkHistories){
-                const options = {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                };
-                // TODO: POST先欲しいです
-                const url = "https://hogehoge"
-                const request = https.request(url, options);
-                request.write(TalkHistories);
-                request.end();
+                sendTalkRequest(TalkHistories);
             }
         } catch (e) {
             console.log('Error', e);
