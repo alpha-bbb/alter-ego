@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	preprocessEntity "github.com/alpha-bbb/alter-ego/backend/preprocess/entity"
 )
 
 func ReplacePhoneNumbers(input string) string {
@@ -23,7 +25,7 @@ func ReplacePhoneNumbers(input string) string {
 
 func ReplacePrefectures(input string) string {
     jsonFilePath := "./json/prefectures.json"
-    var prefectures Prefectures
+    var prefectures preprocessEntity.Prefectures
     if err := LoadJSON(jsonFilePath, &prefectures); err != nil {
         return input
     }
@@ -46,14 +48,11 @@ func ReplacePrefectures(input string) string {
     return input
 }
 
-type MunicipalityData struct {
-	Municipalities []string `json:"municipalities"`
-}
 
 // 市区町村の置き換え処理
 func ReplaceMunicipalities(input string) string {
     jsonFilePath := "./json/municipalities.json"
-    var municipalityData MunicipalityData
+    var municipalityData preprocessEntity.MunicipalityData
 
     // JSONを読み込む
     if err := LoadJSON(jsonFilePath, &municipalityData); err != nil {
@@ -85,9 +84,4 @@ func RestoreTokens(input string) string {
         input = strings.ReplaceAll(input, token, original)
     }
     return input
-}
-
-
-type Prefectures struct {
-    Prefectures []string `json:"prefectures"`
 }
