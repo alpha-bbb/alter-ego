@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	convert "github.com/alpha-bbb/alter-ego/backend/convert"
-	"github.com/alpha-bbb/alter-ego/backend/preprocess" // 追加
+	"github.com/alpha-bbb/alter-ego/backend/preprocess"
 
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 	llmpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/llm/v1"

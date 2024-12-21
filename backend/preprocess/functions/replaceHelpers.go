@@ -7,12 +7,9 @@ import (
 	"strings"
 )
 
-// 電話番号を［電話番号］に置き換え、メモリーに保存
 func ReplacePhoneNumbers(input string) string {
-    // 電話番号の正規表現パターン
     phonePattern := `\b\d{2,4}-\d{2,4}-\d{4}\b`
 
-    // 正規表現を使って電話番号を置き換え
     re := regexp.MustCompile(phonePattern)
     input = re.ReplaceAllStringFunc(input, func(phone string) string {
         // トークン化し、メモリに保存
