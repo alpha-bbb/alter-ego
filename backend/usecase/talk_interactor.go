@@ -24,6 +24,12 @@ func NewTalkInteractor(llmClient server.LLMClient) TalkUseCase {
 
 func (i *talkInteractor) HandleTalk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
 	entityTalkHistory := convert.ConvertTalkHistoryFromGRPCTalkRequest(req)
+
+	limit := 10
+	if len(entityTalkHistory) > limit {
+		entityTalkHistory = entityTalkHistory[len(entityTalkHistory)-limit:]
+	}
+
 	llmHistories := convert.ConvertTalkHistoryToGRPCTalkResponse(entityTalkHistory)
 	llmRequest := &llmpb.TalkRequest{Histories: llmHistories}
 	llmResponse, err := i.llmClient.Talk(ctx, llmRequest)
