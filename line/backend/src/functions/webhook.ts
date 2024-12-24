@@ -55,8 +55,8 @@ rows.forEach(row => {
   // 日付
   const dateMatch = trimmedRow.match(/^(\d{4}\/\d{2}\/\d{2})/);
   if (dateMatch) {
-  talkDate = dateMatch[1].replace(/\//g, "-"); // YYYY-MM-DD
-  return [];
+    talkDate = dateMatch[1].replace(/\//g, "-"); // YYYY-MM-DD
+    return [];
   }
 
   // メッセージ（例: "22:07   Test    おはよう"）
