@@ -63,7 +63,7 @@ rows.forEach(row => {
   const messageMatch = trimmedRow.match(/^(\d{2}:\d{2})\t+([^\t]+)?\t+(.+)$/);
   if (messageMatch && talkDate) {
       const [_, time, userName, message] = messageMatch;
-      const dateTime = `${talkDate}T${time}::00+0900`; // ISO 8601形式
+      const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const user_id =
