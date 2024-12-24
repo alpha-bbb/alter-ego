@@ -1,9 +1,9 @@
 # backend
 
-## とりあえずの立ち上げ
+## ローカル環境立ち上げ
 
 ```sh
-go run ./main.go
+make run
 ```
 
 ## gRPCを直接叩くコマンド例
