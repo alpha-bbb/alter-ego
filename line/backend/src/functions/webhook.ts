@@ -1,10 +1,23 @@
 import { config } from "@/config.js";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
+import { createClient } from '@connectrpc/connect';
+import { createConnectTransport } from '@connectrpc/connect-node';
+import { BackendService } from "../gen/grpc/backend/v1/backend_connect.js";
+import { TalkRequestSchema } from "@/gen/grpc/backend/v1/backend_pb.js";
+import { create } from "@bufbuild/protobuf";
 
 const { MessagingApiClient } = messagingApi;
 
 const client = new MessagingApiClient(config.line.messagingApiClient);
+
+const transport = createConnectTransport({
+  baseUrl: 'http://localhost:3000',
+  httpVersion: '2',
+});
+console.log("transport:", transport);
+export const BackendClient = createClient(BackendService.methods.talk.I, transport);
+
 
 type User = {
   user_id: string;
@@ -21,25 +34,34 @@ async function sendTalkRequest(talkHistories: TalkHistories[]): Promise<void> {
 
 
 
-  const requestMessage = {
-    talkHistories,
-    actionKind: 1,
-  };
+  // const requestMessage = {
+  //   talkHistories,
+  //   actionKind: 1,
+  // };
 
   try {
-    const response = await fetch("http://localhost:3000/backend/v1/BackendService/Talk", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/protobuf",
-      },
-      body: JSON.stringify(requestMessage),
+    // const response = await fetch("http://localhost:3000/backend/v1/BackendService/Talk", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/protobuf",
+    //   },
+    //   body: JSON.stringify(requestMessage),
+    // });
+
+    // if (!response.ok) {
+    //   throw new Error(`HTTP error! status: ${response.status}`);
+    // }
+
+    // console.log("Response:", response);
+
+    const request = create(TalkRequestSchema, {
+      histories: talkHistories,
+      actionKind: 1,
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const response = await BackendClient.talk(request);
+    console.log("Response:", response.message);
 
-    console.log("Response:", response);
   } catch (error) {
     console.error("Error:", error);
   }
