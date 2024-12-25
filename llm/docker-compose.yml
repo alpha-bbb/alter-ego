@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052"
+    tty: true
+    env_file: .env
+    command: >
+      ash -c "node dist/server/index.js"
