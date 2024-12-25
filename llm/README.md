@@ -43,5 +43,5 @@ buf curl --protocol grpc --http2-prior-knowledge \
     ],
     "actionKind": 2
   }' \
-  http://localhost:8080/llm.v1.LlmService/Talk
+  http://localhost:50052/llm.v1.LlmService/Talk
 ```

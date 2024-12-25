@@ -1,8 +1,8 @@
-import { LlmService } from "../gen/grpc/llm/v1/llm_pb";
-import fastify from "fastify";
-import { fastifyConnectPlugin } from "@connectrpc/connect-fastify";
-import { llmServiceImpl } from "../services/llmService";
 import type { ConnectRouter } from "@connectrpc/connect";
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify";
+import fastify from "fastify";
+import { LlmService } from "../gen/grpc/llm/v1/llm_pb";
+import { llmServiceImpl } from "../services/llmService";
 
 (async () => {
   const server = fastify({
@@ -22,7 +22,7 @@ import type { ConnectRouter } from "@connectrpc/connect";
   await server.ready();
 
   await server.listen({
-    host: "localhost",
-    port: 8080,
+    host: "0.0.0.0",
+    port: 50052,
   });
 })();

@@ -1,0 +1,13 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+    ports:
+      - "50051:50051"
+    tty: true
+    env_file: .env
+    command: >
+      ash -c "go run main.go"
