@@ -23,6 +23,6 @@ import { llmServiceImpl } from "../services/llmService";
 
   await server.listen({
     host: "0.0.0.0",
-    port: 8080,
+    port: 50052,
   });
 })();
