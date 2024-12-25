@@ -2,21 +2,19 @@ import { config } from "@/config.js";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
 import { createClient } from '@connectrpc/connect';
-import { createConnectTransport } from '@connectrpc/connect-node';
-import { BackendService } from "../gen/grpc/backend/v1/backend_connect.js";
-import { TalkRequestSchema } from "@/gen/grpc/backend/v1/backend_pb.js";
+import { createGrpcTransport } from '@connectrpc/connect-node';
+import { TalkRequestSchema, BackendService } from "@/gen/grpc/backend/v1/backend_pb.js";
 import { create } from "@bufbuild/protobuf";
 
 const { MessagingApiClient } = messagingApi;
 
 const client = new MessagingApiClient(config.line.messagingApiClient);
 
-const transport = createConnectTransport({
-  baseUrl: 'http://localhost:3000',
-  httpVersion: '2',
+const transport = createGrpcTransport({
+  baseUrl: 'http://localhost:50051',
 });
 console.log("transport:", transport);
-export const BackendClient = createClient(BackendService.methods.talk.I, transport);
+export const BackendClient = createClient(BackendService, transport);
 
 
 type User = {
@@ -30,30 +28,10 @@ user: User;
 message: string;
 };
 
-async function sendTalkRequest(talkHistories: TalkHistories[]): Promise<void> {
+async function sendTalkRequest(talkHistories: TalkHistories[]): Promise<string[]> {
 
-
-
-  // const requestMessage = {
-  //   talkHistories,
-  //   actionKind: 1,
-  // };
 
   try {
-    // const response = await fetch("http://localhost:3000/backend/v1/BackendService/Talk", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/protobuf",
-    //   },
-    //   body: JSON.stringify(requestMessage),
-    // });
-
-    // if (!response.ok) {
-    //   throw new Error(`HTTP error! status: ${response.status}`);
-    // }
-
-    // console.log("Response:", response);
-
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
       actionKind: 1,
@@ -61,9 +39,11 @@ async function sendTalkRequest(talkHistories: TalkHistories[]): Promise<void> {
 
     const response = await BackendClient.talk(request);
     console.log("Response:", response.message);
+    return response.message;
 
   } catch (error) {
     console.error("Error:", error);
+    return [];
   }
 }
 
@@ -100,8 +80,6 @@ rows.forEach(row => {
       user: { name, user_id },
       message,
       });
-  }else {
-      console.log("cannot parse");
   }
 });
 
@@ -155,9 +133,18 @@ export const webhookHandler = async (
 
             const TalkHistories = parseTalkHistories(talk, hostUserName);
             console.log('TalkHistories:' ,TalkHistories);
+            let message:string[] = [];
             if (TalkHistories){
-                sendTalkRequest(TalkHistories);
+                message = await sendTalkRequest(TalkHistories);
             }
+            const messages: any[] = [];
+            for (let i = 0; i < message.length; i++){
+                messages.push({ type: "text", text: message[i] });
+            }
+            await client.replyMessage({
+              replyToken: e.replyToken,
+              messages: messages,
+            });
         } catch (e) {
             console.log('Error', e);
         }

@@ -23,4 +23,7 @@
     },
     "biome.enabled": true,
     "go.lintTool": "golangci-lint",
+    "[dockerfile]": {
+        "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+    },
 }

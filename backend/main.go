@@ -9,7 +9,6 @@ import (
 
 	"github.com/alpha-bbb/alter-ego/backend/server"
 	"github.com/alpha-bbb/alter-ego/backend/usecase"
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -17,12 +16,6 @@ import (
 )
 
 func main() {
-    // Load environment variables from .env file
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatalf("Error loading .env file")
-    }
-
     grpcClientAddress := os.Getenv("LLM_GRPC_CLIENT_ADDRESS")
     port := os.Getenv("PORT")
 
