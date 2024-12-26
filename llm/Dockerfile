@@ -9,15 +9,15 @@ RUN npm install -g pnpm \
 
 COPY . .
 
-# RUN pnpm run build
+RUN pnpm run build
 
-# FROM node:22-alpine
+FROM node:22-alpine
 
-# WORKDIR /app
+WORKDIR /app
 
-# COPY --from=builder /app/node_modules ./node_modules
-# COPY --from=builder /app/dist ./dist
-# COPY package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY package.json ./
 
 EXPOSE 50052
 
