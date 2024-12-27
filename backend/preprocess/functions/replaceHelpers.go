@@ -26,6 +26,7 @@ func ReplacePhoneNumbers(input string) string {
 func ReplacePrefectures(input string) string {
     jsonFilePath := "./json/prefectures.json"
     var prefectures entity.Prefectures
+    // 処理を続行するため、ファイル読み込みに失敗した場合は置換せずにそのまま返す
     if err := LoadJSON(jsonFilePath, &prefectures); err != nil {
         return input
     }
@@ -48,13 +49,12 @@ func ReplacePrefectures(input string) string {
     return input
 }
 
-
 // 市区町村の置き換え処理
 func ReplaceMunicipalities(input string) string {
     jsonFilePath := "./json/municipalities.json"
     var municipalityData entity.MunicipalityData
 
-    // JSONを読み込む
+    // 処理を続行するため、ファイル読み込みに失敗した場合は置換せずにそのまま返す
     if err := LoadJSON(jsonFilePath, &municipalityData); err != nil {
         return input
     }
