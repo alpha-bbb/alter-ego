@@ -6,7 +6,7 @@ import {
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
 import { createGrpcTransport } from "@connectrpc/connect-node";
-import { type Message, messagingApi } from "@line/bot-sdk";
+import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
 
 const { MessagingApiClient } = messagingApi;
@@ -97,6 +97,7 @@ export const webhookHandler = async (
 ): Promise<void> => {
   try {
     if (req.body.events && req.body.events.length > 0) {
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
         if (e.type === "message" && e.message.type === "text") {
           console.log("Replying to message:", e.message.text);
@@ -161,7 +162,8 @@ export const webhookHandler = async (
               });
             }
             // ボタンテンプレートメッセージ
-            const buttonTemplateMessage: Message = {
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const buttonTemplateMessage: any = {
               type: "template",
               altText: "This is a buttons template",
               template: {
@@ -169,22 +171,22 @@ export const webhookHandler = async (
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
                 title: "Suggested messages",
-                text: "Which message do you want to send?",
+                text: "Which message do you want to copy?",
                 actions: [
                   {
-                    type: "uri",
+                    type: "clipboard",
                     label: "1",
-                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[0].text)}`,
+                    clipboardText: messages[0].text,
                   },
                   {
-                    type: "uri",
+                    type: "clipboard",
                     label: "2",
-                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[1].text)}`,
+                    clipboardText: messages[1].text,
                   },
                   {
-                    type: "uri",
+                    type: "clipboard",
                     label: "3",
-                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[2].text)}`,
+                    clipboardText: messages[2].text,
                   },
                 ],
               },
