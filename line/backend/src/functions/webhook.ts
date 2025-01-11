@@ -6,7 +6,7 @@ import {
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
 import { createGrpcTransport } from "@connectrpc/connect-node";
-import { messagingApi } from "@line/bot-sdk";
+import { type Message, messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
 
 const { MessagingApiClient } = messagingApi;
@@ -56,6 +56,7 @@ function parseTalkHistories(
   const TalkHistories: TalkHistories[] = [];
   let talkDate: string | null = null;
 
+  // biome-ignore lint/complexity/noForEach: <explanation>
   rows.forEach((row) => {
     const trimmedRow = row.trim();
     // 日付
@@ -132,6 +133,7 @@ export const webhookHandler = async (
             console.log("file contents:", talk);
             const match = talk.match(/\[LINE\] (.*?)とのトーク履歴/);
             let hostUserName = "noName";
+            // biome-ignore lint/complexity/useOptionalChain: <explanation>
             if (match && match[1]) {
               hostUserName = match[1];
               console.log("Hostname:", hostUserName);
@@ -143,13 +145,54 @@ export const webhookHandler = async (
             if (TalkHistories) {
               message = await sendTalkRequest(TalkHistories);
             }
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const messages: any[] = [];
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const choices: any[] = [];
             for (let i = 0; i < message.length; i++) {
-              messages.push({ type: "text", text: message[i] });
+              const index = i;
+              choices.push({
+                type: "text",
+                text: `${index + 1}: ${message[i]}`,
+              });
+              messages.push({
+                type: "text",
+                text: message[i],
+              });
             }
+            // ボタンテンプレートメッセージ
+            const buttonTemplateMessage: Message = {
+              type: "template",
+              altText: "This is a buttons template",
+              template: {
+                type: "buttons",
+                imageAspectRatio: "rectangle",
+                imageSize: "cover",
+                title: "Suggested messages",
+                text: "Which message do you want to send?",
+                actions: [
+                  {
+                    type: "uri",
+                    label: "1",
+                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[0].text)}`,
+                  },
+                  {
+                    type: "uri",
+                    label: "2",
+                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[1].text)}`,
+                  },
+                  {
+                    type: "uri",
+                    label: "3",
+                    uri: `https://liff.line.me/2006618303-Rpm0pmJz?message=${encodeURIComponent(messages[2].text)}`,
+                  },
+                ],
+              },
+            };
+            choices.push(buttonTemplateMessage);
             await client.replyMessage({
               replyToken: e.replyToken,
-              messages: messages,
+              messages: choices,
             });
           } catch (e) {
             console.log("Error", e);

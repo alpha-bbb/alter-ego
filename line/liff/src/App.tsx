@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
 import liff from "@line/liff";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [text, setText] = useState("");
 
   useEffect(() => {
     liff
       .init({
-        liffId: import.meta.env.VITE_LIFF_ID
+        liffId: import.meta.env.VITE_LIFF_ID,
       })
       .then(() => {
         setMessage("LIFF init succeeded.");
