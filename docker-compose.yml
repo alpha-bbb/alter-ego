@@ -6,6 +6,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "50051:50051"
     volumes:
@@ -20,6 +22,8 @@ services:
       context: ./line/backend
       dockerfile: Dockerfile
     container_name: line_backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"
     env_file:
@@ -30,6 +34,8 @@ services:
       context: ./llm
       dockerfile: Dockerfile
     container_name: llm
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "50052:50052"
     env_file:
@@ -41,6 +47,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: nginx
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
