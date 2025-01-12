@@ -18,15 +18,20 @@ type TalkUseCase interface {
 type talkInteractor struct {
 	llmClient server.LLMClient
 }
+
 func NewTalkInteractor(llmClient server.LLMClient) TalkUseCase {
 	return &talkInteractor{llmClient: llmClient}
 }
 
 func (i *talkInteractor) HandleTalk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
 	entityTalkHistory := convert.ConvertTalkHistoryFromGRPCTalkRequest(req)
+	fmt.Print("🔴")
+	fmt.Print(entityTalkHistory)
 	llmHistories := convert.ConvertTalkHistoryToGRPCTalkResponse(entityTalkHistory)
 	llmRequest := &llmpb.TalkRequest{Histories: llmHistories}
 	llmResponse, err := i.llmClient.Talk(ctx, llmRequest)
+	fmt.Print("🟢")
+	fmt.Print(llmResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call LLM service: %w", err)
 	}
