@@ -8,6 +8,7 @@ import (
 
 type TalkUseCase interface {
 	HandleTalk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error)
+	SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceRequest) (*backendpb.SubmitUserChoiceResponse, error)
 }
 
 type BackendServer struct {
@@ -21,4 +22,8 @@ func NewBackendServer(talkUseCase TalkUseCase) *BackendServer {
 
 func (s *BackendServer) Talk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
 	return s.talkUseCase.HandleTalk(ctx, req)
+}
+
+func (s *BackendServer) SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceRequest) (*backendpb.SubmitUserChoiceResponse, error) {
+	return s.talkUseCase.SubmitUserChoice(ctx, req)
 }

@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - .:/app
+      - /var/log/alter-ego:/var/log/alter-ego
     ports:
       - "50051:50051"
     tty: true
