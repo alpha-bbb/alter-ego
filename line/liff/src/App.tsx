@@ -1,53 +1,72 @@
-import { useEffect, useState } from "react";
 import liff from "@line/liff";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [text, setText] = useState("");
 
   useEffect(() => {
-    liff
-      .init({
-        liffId: import.meta.env.VITE_LIFF_ID
-      })
-      .then(() => {
+    const initLiff = async () => {
+      try {
+        await liff.init({
+          liffId: import.meta.env.VITE_LIFF_ID,
+        });
+
         setMessage("LIFF init succeeded.");
-      })
-      .catch((e: Error) => {
+
+        // クエリパラメータを取得
+        const queryParams = new URLSearchParams(window.location.search);
+        const queryText = queryParams.get("text");
+        const messageNo = queryParams.get("messageNo");
+
+        if (queryText) {
+          // setText(queryText);
+          setText("hogehoge");
+          console.log(`Query parameter "text": ${queryText}`);
+        }
+
+        if (messageNo) {
+          console.log(`Message No.: ${messageNo}`);
+        }
+      } catch (e) {
         setMessage("LIFF init failed.");
         setError(`${e}`);
-      });
-  });
+      }
+    };
 
-  const handleShareTargetPicker = () => {
-    if (liff.isApiAvailable("shareTargetPicker")) {
-      liff.shareTargetPicker([
-        {
-          type: "text",
-          text: "Hello, World!",
-        },
-      ]);
+    initLiff();
+  }, []);
+
+  const handleCopyToClipboard = async () => {
+    try {
+      if (text) {
+        await navigator.clipboard.writeText("hogehoge");
+        alert(`Copied to clipboard: ${text}`);
+      } else {
+        alert("No text available to copy.");
+      }
+    } catch (error) {
+      console.error("Failed to copy text to clipboard:", error);
+      alert("Clipboard operation failed.");
     }
   };
 
   return (
     <div className="App">
-      <h1>create-liff-app</h1>
+      <h1>LIFF App</h1>
       {message && <p>{message}</p>}
       {error && (
         <p>
           <code>{error}</code>
         </p>
       )}
-      <a
-        href="https://developers.line.biz/ja/docs/liff/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        LIFF Documentation
-      </a>
-      <button onClick={handleShareTargetPicker}>Share Target Picker</button>
+      <div>
+        <p>Text to copy: {text || "No text provided"}</p>
+        {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+        <button onClick={handleCopyToClipboard}>Copy to Clipboard</button>
+      </div>
     </div>
   );
 }
