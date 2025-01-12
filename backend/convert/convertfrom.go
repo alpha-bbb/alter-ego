@@ -6,20 +6,21 @@ import (
 )
 
 func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []*entity.TalkHistory {
-    if req == nil || req.Histories == nil {
-        return nil
-    }
+	if req == nil || req.Histories == nil {
+		return nil
+	}
 
-    result := make([]*entity.TalkHistory, len(req.Histories))
-    for i := range req.Histories {
-        result[i] = &entity.TalkHistory{
-            Date: req.Histories[i].Date,
-            User: entity.User{
-                UserID: req.Histories[i].User.UserId,
-                Name:   req.Histories[i].User.Name,
-            },
-            Message: req.Histories[i].Message,
-        }
-    }
-    return result
+	result := make([]*entity.TalkHistory, len(req.Histories))
+	for i := range req.Histories {
+		result[i] = &entity.TalkHistory{
+			Date: req.Histories[i].Date,
+			User: entity.User{
+				UserID: req.Histories[i].User.UserId,
+				Name:   req.Histories[i].User.Name,
+				Role:   int(req.Histories[i].User.Role),
+			},
+			Message: req.Histories[i].Message,
+		}
+	}
+	return result
 }
