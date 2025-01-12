@@ -13,48 +13,94 @@ import (
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 )
 
+const (
+	logDir      = "./logs"
+	logFilePath = "./logs/user_choices.log"
+)
+
+// createLogDirectory ensures the log directory exists.
+func createLogDirectory() error {
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(logDir, 0755); err != nil {
+			return fmt.Errorf("failed to create log directory: %w", err)
+		}
+	}
+	return nil
+}
+
+// createLogFile ensures the log file exists.
+func createLogFile() error {
+	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
+		file, err := os.Create(logFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to create log file: %w", err)
+		}
+		file.Close()
+	}
+	return nil
+}
+
+// setupLogger initializes the logger with file and console output.
+func setupLogger() (*zap.Logger, error) {
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %w", err)
+	}
+
+	fileCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(file),
+		zap.InfoLevel,
+	)
+
+	consoleCore := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		zapcore.Lock(os.Stdout),
+		zap.InfoLevel,
+	)
+
+	logger := zap.New(zapcore.NewTee(fileCore, consoleCore))
+	return logger, nil
+}
+
+// SubmitUserChoice handles user choice submissions.
 func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceRequest) (*backendpb.SubmitUserChoiceResponse, error) {
-    // ログファイルの作成またはオープン
-    file, err := os.OpenFile("/var/log/alter-ego/user_choices.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Ensure log directory and file exist.
+	if err := createLogDirectory(); err != nil {
+		fmt.Printf("Failed to create log directory: %v\n", err)
+		return nil, err
+	}
 
-    if err != nil {
-        fmt.Printf("Failed to open log file: %v\n", err)
-        return nil, fmt.Errorf("failed to open log file: %w", err)
-    }
-    defer file.Close()
+	if err := createLogFile(); err != nil {
+		fmt.Printf("Failed to create log file: %v\n", err)
+		return nil, err
+	}
 
-    // ファイルハンドラーを用いたzap loggerの設定
-    core := zapcore.NewCore(
-        zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
-        zapcore.AddSync(file),
-        zap.InfoLevel,
-    )
-    logger := zap.New(core)
+	// Set up the logger.
+	logger, err := setupLogger()
+	if err != nil {
+		fmt.Printf("Failed to setup logger: %v\n", err)
+		return nil, err
+	}
 
-    defer func() {
-        if err := logger.Sync(); err != nil {
-            fmt.Printf("Failed to sync logger: %v\n", err)
-        }
-    }()
+	// Validate the request.
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		logger.Error("Validation failed",
+			zap.String("choice", req.GetChoice()),
+			zap.Error(err),
+		)
+		return nil, fmt.Errorf("validation failed: %w", err)
+	}
 
-    // バリデーション処理
-    validate := validator.New()
-    err = validate.Struct(req)
-    if err != nil {
-        logger.Error("validation failed",
-            zap.String("choice", req.GetChoice()),
-            zap.Error(err),
-        )
-        return nil, fmt.Errorf("validation failed: %w", err)
-    }
+	// Log the user choice.
+	logger.Info("Received user choice",
+		zap.String("choice", req.GetChoice()),
+		zap.Time("timestamp", time.Now()),
+	)
 
-    // 受け取った選択肢をログに出力
-    logger.Info("Received user choice",
-        zap.String("choice", req.GetChoice()),
-        zap.Time("timestamp", time.Now()),
-    )
-
-    return &backendpb.SubmitUserChoiceResponse{
-        Status: backendpb.SubmitUserChoiceResponse_STATUS_OK,
-    }, nil
+	// Return the response.
+	return &backendpb.SubmitUserChoiceResponse{
+		Status: backendpb.SubmitUserChoiceResponse_STATUS_OK,
+	}, nil
 }
