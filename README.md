@@ -13,6 +13,12 @@
 └── proto           # schema
 ```
 
-## デプロイ方法
+## Docker立ち上げ
+
+```sh
+docker compose up --build
+docker compose -f nginx/docker-compose.yml up --build
+```
 
 各README.mdを参照。
+
