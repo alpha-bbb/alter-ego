@@ -5,7 +5,8 @@ import { callDifyTalk } from "./external_api/dify";
 export const llmServiceImpl: ServiceImpl<typeof LlmService> = {
   async talk(req, _context) {
     try {
-      const input = req.histories;
+      // 量が多いとエラーになるので300件に制限
+      const input = req.histories.slice(-300);
 
       const messages = await callDifyTalk(input);
 

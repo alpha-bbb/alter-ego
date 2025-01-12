@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
 
+	"github.com/alpha-bbb/alter-ego/backend/infrastructure/log"
 	"github.com/alpha-bbb/alter-ego/backend/server"
 	"github.com/alpha-bbb/alter-ego/backend/usecase"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -16,34 +17,38 @@ import (
 )
 
 func main() {
-    grpcClientAddress := os.Getenv("LLM_GRPC_CLIENT_ADDRESS")
-    port := os.Getenv("PORT")
+	logger, err := log.NewLogger()
+	if err != nil {
+		logger.Fatal("failed to create logger: %v", zap.Error(err))
+	}
+	grpcClientAddress := os.Getenv("LLM_GRPC_CLIENT_ADDRESS")
+	port := os.Getenv("PORT")
 
-    // Setup dependencies
-    llmClient := server.NewGRPCLLMClient(grpcClientAddress)
-    talkUseCase := usecase.NewTalkInteractor(llmClient)
-    backendServer := server.NewBackendServer(talkUseCase)
+	// Setup dependencies
+	llmClient := server.NewGRPCLLMClient(grpcClientAddress)
+	talkUseCase := usecase.NewTalkInteractor(llmClient)
+	backendServer := server.NewBackendServer(talkUseCase)
 
-    // Start gRPC server
-    listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
-    if err != nil {
-        log.Fatalf("failed to listen: %v", err)
-    }
-    s := grpc.NewServer()
-    backendpb.RegisterBackendServiceServer(s, backendServer)
-    reflection.Register(s)
+	// Start gRPC server
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		logger.Fatal("failed to listen: %v", zap.Error(err))
+	}
+	s := grpc.NewServer()
+	backendpb.RegisterBackendServiceServer(s, backendServer)
+	reflection.Register(s)
 
-    go func() {
-        log.Printf("starting gRPC server on port %s", port)
-        if err := s.Serve(listener); err != nil {
-            log.Fatalf("failed to serve: %v", err)
-        }
-    }()
+	go func() {
+		logger.Info("starting gRPC server on port", zap.String("port", port))
+		if err := s.Serve(listener); err != nil {
+			logger.Fatal("failed to serve: %v", zap.Error(err))
+		}
+	}()
 
-    // Graceful shutdown
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, os.Interrupt)
-    <-quit
-    log.Println("stopping gRPC server...")
-    s.GracefulStop()
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	logger.Info("stopping gRPC server...")
+	s.GracefulStop()
 }

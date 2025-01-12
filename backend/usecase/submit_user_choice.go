@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
+	"github.com/alpha-bbb/alter-ego/backend/infrastructure/log"
 )
 
 const (
@@ -65,28 +66,32 @@ func setupLogger() (*zap.Logger, error) {
 
 // SubmitUserChoice handles user choice submissions.
 func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceRequest) (*backendpb.SubmitUserChoiceResponse, error) {
+	logger, err := log.NewLogger()
+	if err != nil {
+		return nil, err
+	}
 	// Ensure log directory and file exist.
 	if err := createLogDirectory(); err != nil {
-		fmt.Printf("Failed to create log directory: %v\n", err)
+		logger.Error("Failed to create log directory: %v\n", zap.Error(err))
 		return nil, err
 	}
 
 	if err := createLogFile(); err != nil {
-		fmt.Printf("Failed to create log file: %v\n", err)
+		logger.Error("Failed to create log file: %v\n", zap.Error(err))
 		return nil, err
 	}
 
 	// Set up the logger.
-	logger, err := setupLogger()
+	logger_store, err := setupLogger()
 	if err != nil {
-		fmt.Printf("Failed to setup logger: %v\n", err)
+		logger.Error("Failed to setup logger: %v\n", zap.Error(err))
 		return nil, err
 	}
 
 	// Validate the request.
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
-		logger.Error("Validation failed",
+		logger_store.Error("Validation failed",
 			zap.String("choice", req.GetChoice()),
 			zap.Error(err),
 		)
@@ -94,7 +99,7 @@ func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceReques
 	}
 
 	// Log the user choice.
-	logger.Info("Received user choice",
+	logger_store.Info("Received user choice",
 		zap.String("choice", req.GetChoice()),
 		zap.Time("timestamp", time.Now()),
 	)
