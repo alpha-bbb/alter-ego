@@ -20,7 +20,7 @@ export const callDifyTalk = async (
 ): Promise<{ replies: string[] }> => {
   try {
     const response = await difyClient.post("/chat-messages", {
-      query: input,
+      query: JSON.stringify(input),
       inputs: {},
       response_mode: "blocking",
       user: "abc-123",

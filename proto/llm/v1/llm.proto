@@ -24,8 +24,14 @@ message TalkHistory {
 }
 
 message User {
+  enum UserRole {
+    UNSPECIFIED = 0; // 未定義
+    SELF = 1; // 私
+    YOU = 2;  // あなた
+  }
   string user_id = 1; // ユーザーを一意に識別するID
   string name = 2; // ユーザー名
+  UserRole role = 3; // ユーザーの役割
 }
 
 message TalkResponse {
