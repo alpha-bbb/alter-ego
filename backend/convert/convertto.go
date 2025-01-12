@@ -17,7 +17,7 @@ func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*ll
 			User: &llmpb.User{
 				UserId: histories[i].User.UserID,
 				Name:   histories[i].User.Name,
-				Role:   llmpb.UserUserRole(histories[i].User.Role),
+				Role:   llmpb.User_UserRole(histories[i].User.Role),
 			},
 			Message: histories[i].Message,
 		}

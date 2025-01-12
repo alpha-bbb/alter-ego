@@ -2,7 +2,9 @@ import { config } from "@/config.js";
 import {
   BackendService,
   SubmitUserChoiceRequestSchema,
+  type TalkHistory,
   TalkRequestSchema,
+  User_UserRole,
 } from "@/gen/grpc/backend/v1/backend_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
@@ -24,20 +26,8 @@ const transport = createGrpcTransport({
 console.log("transport:", transport);
 export const BackendClient = createClient(BackendService, transport);
 
-type User = {
-  user_id: string;
-  role: string;
-  name: string;
-};
-
-type TalkHistories = {
-  date: string;
-  user: User;
-  message: string;
-};
-
 async function sendTalkRequest(
-  talkHistories: TalkHistories[],
+  talkHistories: TalkHistory[],
 ): Promise<string[]> {
   try {
     const request = create(TalkRequestSchema, {
@@ -70,9 +60,9 @@ async function sendQuestionnaire(messageNumber: string): Promise<any> {
   }
 }
 
-function parseTalkHistories(talk: string, yourName: string): TalkHistories[] {
+function parseTalkHistories(talk: string, yourName: string): TalkHistory[] {
   const rows = talk.split("\n");
-  const TalkHistories: TalkHistories[] = [];
+  const TalkHistories: TalkHistory[] = [];
   let talkDate: string | null = null;
 
   // biome-ignore lint/complexity/noForEach: <explanation>
@@ -93,18 +83,32 @@ function parseTalkHistories(talk: string, yourName: string): TalkHistories[] {
       const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
 
       const name = userName || "Unknown";
-      const user_id =
+      const userId =
         name === yourName
           ? `${yourName}02`
           : name === "Unknown"
             ? "Unknown"
             : `${name}01`;
-      const role =
-        name === yourName ? "YOU" : name === "Unknown" ? "UNSPECIFIED" : "SELF";
+      const role = (() => {
+        switch (name) {
+          case yourName:
+            return User_UserRole.YOU;
+          case "Unknown":
+            return User_UserRole.UNSPECIFIED;
+          default:
+            return User_UserRole.SELF;
+        }
+      })();
 
       TalkHistories.push({
+        $typeName: "backend.v1.TalkHistory",
         date: dateTime,
-        user: { name, user_id, role },
+        user: {
+          $typeName: "backend.v1.User",
+          name,
+          userId,
+          role: role,
+        },
         message,
       });
     }
