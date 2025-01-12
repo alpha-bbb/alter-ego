@@ -17,7 +17,8 @@ buf curl --protocol grpc --http2-prior-knowledge \
             "date": "2024-12-07",
             "user": {
                 "userId": "123",
-                "name": "太郎"
+                "name": "太郎",
+                "role": 2
             },
             "message": "今度ご飯にいきませんか？"
         }
