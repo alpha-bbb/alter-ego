@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/alpha-bbb/alter-ego/backend/convert"
 
@@ -25,13 +26,13 @@ func NewTalkInteractor(llmClient server.LLMClient) TalkUseCase {
 
 func (i *talkInteractor) HandleTalk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
 	entityTalkHistory := convert.ConvertTalkHistoryFromGRPCTalkRequest(req)
-	fmt.Print("🔴")
-	fmt.Print(entityTalkHistory)
+	log.Print("🔴")
+	log.Print(entityTalkHistory)
 	llmHistories := convert.ConvertTalkHistoryToGRPCTalkResponse(entityTalkHistory)
 	llmRequest := &llmpb.TalkRequest{Histories: llmHistories}
 	llmResponse, err := i.llmClient.Talk(ctx, llmRequest)
-	fmt.Print("🟢")
-	fmt.Print(llmResponse)
+	log.Print("🟢")
+	log.Print(llmResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call LLM service: %w", err)
 	}
