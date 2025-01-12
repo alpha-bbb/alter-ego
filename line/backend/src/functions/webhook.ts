@@ -6,8 +6,15 @@ import {
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
 import { createGrpcTransport } from "@connectrpc/connect-node";
+import type { Message } from "@line/bot-sdk";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
+import express from "express";
+import sharp from "sharp";
+// import { createWorker } from "tesseract.js";
+
+const app = express();
+app.use(express.json());
 
 const { MessagingApiClient } = messagingApi;
 
@@ -21,6 +28,7 @@ export const BackendClient = createClient(BackendService, transport);
 
 type User = {
   user_id: string;
+  role: string;
   name: string;
 };
 
@@ -48,10 +56,7 @@ async function sendTalkRequest(
   }
 }
 
-function parseTalkHistories(
-  talk: string,
-  hostUserName: string,
-): TalkHistories[] {
+function parseTalkHistories(talk: string, yourName: string): TalkHistories[] {
   const rows = talk.split("\n");
   const TalkHistories: TalkHistories[] = [];
   let talkDate: string | null = null;
@@ -70,19 +75,22 @@ function parseTalkHistories(
     const messageMatch = trimmedRow.match(/^(\d{2}:\d{2})\t+([^\t]+)?\t+(.+)$/);
     if (messageMatch && talkDate) {
       const [_, time, userName, message] = messageMatch;
+      console.log("name:", userName);
       const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const user_id =
-        name === hostUserName
-          ? `${hostUserName}01`
+        name === yourName
+          ? `${yourName}02`
           : name === "Unknown"
             ? "Unknown"
-            : `${name}02`;
+            : `${name}01`;
+      const role =
+        name === yourName ? "YOU" : name === "Unknown" ? "UNSPECIFIED" : "SELF";
 
       TalkHistories.push({
         date: dateTime,
-        user: { name, user_id },
+        user: { name, user_id, role },
         message,
       });
     }
@@ -99,12 +107,99 @@ export const webhookHandler = async (
     if (req.body.events && req.body.events.length > 0) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
-        if (e.type === "message" && e.message.type === "text") {
-          console.log("Replying to message:", e.message.text);
-          await client.replyMessage({
-            replyToken: e.replyToken,
-            messages: [{ type: "text", text: e.message.text }],
-          });
+        // if (e.type === "message" && e.message.type === "text") {
+        //   console.log("Replying to message:", e.message.text);
+        //   await client.replyMessage({
+        //     replyToken: e.replyToken,
+        //     messages: [{ type: "text", text: e.message.text }],
+        //   });
+        // }
+        if (e.type === "message" && e.message.type === "image") {
+          console.log("res:", e);
+          try {
+            const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
+
+            const response = await fetch(endpoint, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+              },
+            });
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch content: ${response.statusText}`,
+              );
+            }
+
+            const imageBuffer = await response.arrayBuffer();
+            const imageJpeg = await sharp(imageBuffer)
+              .jpeg({ quality: 90 }) // 画像の品質を指定 (90%)
+              .toBuffer();
+            // (async () => {
+            //   const worker = await createWorker("jpn");
+            //   const ret = await worker.recognize(imageJpeg);
+            //   console.log("image text!:", ret.data.text);
+            //   await worker.terminate();
+            // })();
+
+            const DIFY_API_URL = "http://dify.alter-ego.jtj.jp/v1";
+            const DIFY_API_KEY = "app-UXq7yOxpjZBRKBQoBljCFaTP";
+
+            const formData = new FormData();
+            const mimeType = "image/jpeg";
+            const fileName = "image.jpg";
+            const blob = new Blob([imageJpeg], { type: mimeType });
+            const file = new File([blob], fileName, { type: mimeType });
+            formData.append("file", file, file.name);
+            formData.append("user", "abc-123");
+            const uploadImage = await fetch(`${DIFY_API_URL}/files/upload`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${DIFY_API_KEY}`,
+              },
+              body: formData,
+            });
+            // const uploadedRes = JSON.stringify(uploadImage);
+            console.log("uploadedRes:", uploadImage);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch content: ${response.statusText}`,
+              );
+            }
+            // const talkResponse = await fetch(`${DIFY_API_URL}/chat-messages`, {
+            //   method: "POST",
+            //   headers: {
+            //     Authorization: `Bearer ${DIFY_API_KEY}`,
+            //     "Content-Type": "application/json",
+            //   },
+            //   body: JSON.stringify({
+            //     files: [
+            //       {
+            //         type: "image",
+            //         transfer_method: "local_file",
+            //         upload_file_id: uploadedRes,
+            //       },
+            //     ],
+            //   }),
+            // });
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch content: ${response.statusText}`,
+              );
+            }
+
+            await client.replyMessage({
+              replyToken: e.replyToken,
+              messages: [
+                {
+                  type: "text",
+                  text: "画像を受け取りました。処理中です。",
+                },
+              ],
+            });
+          } catch (e) {
+            console.log("Error", e);
+          }
         }
 
         if (e.type === "message" && e.message.type === "file") {
@@ -133,14 +228,14 @@ export const webhookHandler = async (
             const talk = decoder.decode(buffer);
             console.log("file contents:", talk);
             const match = talk.match(/\[LINE\] (.*?)とのトーク履歴/);
-            let hostUserName = "noName";
+            let yourName = "noName";
             // biome-ignore lint/complexity/useOptionalChain: <explanation>
             if (match && match[1]) {
-              hostUserName = match[1];
-              console.log("Hostname:", hostUserName);
+              yourName = match[1];
+              console.log("Hostname:", yourName);
             }
 
-            const TalkHistories = parseTalkHistories(talk, hostUserName);
+            const TalkHistories = parseTalkHistories(talk, yourName);
             console.log("TalkHistories:", TalkHistories);
             let message: string[] = [];
             if (TalkHistories) {
@@ -162,8 +257,7 @@ export const webhookHandler = async (
               });
             }
             // ボタンテンプレートメッセージ
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateMessage: any = {
+            const buttonTemplateMessage: Message = {
               type: "template",
               altText: "This is a buttons template",
               template: {
@@ -174,19 +268,9 @@ export const webhookHandler = async (
                 text: "Which message do you want to copy?",
                 actions: [
                   {
-                    type: "clipboard",
+                    type: "uri",
                     label: "1",
-                    clipboardText: messages[0].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "2",
-                    clipboardText: messages[1].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "3",
-                    clipboardText: messages[2].text,
+                    uri: "https://7653-180-44-62-159.ngrok-free.app/copy",
                   },
                 ],
               },
