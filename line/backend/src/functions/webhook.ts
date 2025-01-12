@@ -60,23 +60,34 @@ async function sendQuestionnaire(messageNumber: string): Promise<any> {
   }
 }
 
-function parseTalkHistories(talk: string, yourName: string): TalkHistory[] {
+export function parseTalkHistories(
+  talk: string,
+  yourName: string,
+): TalkHistory[] {
   const rows = talk.split("\n");
   const TalkHistories: TalkHistory[] = [];
   let talkDate: string | null = null;
+  let dateMatch: RegExpMatchArray | null = null;
 
-  // biome-ignore lint/complexity/noForEach: <explanation>
-  rows.forEach((row) => {
+  for (const row of rows) {
     const trimmedRow = row.trim();
     // 日付
-    const dateMatch = trimmedRow.match(/^(\d{4}\/\d{2}\/\d{2})/);
-    if (dateMatch) {
-      talkDate = dateMatch[1].replace(/\//g, "-"); // YYYY-MM-DD
-      return [];
+    const newDateMatch = trimmedRow.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    if (newDateMatch) {
+      dateMatch = newDateMatch;
     }
+    if (dateMatch === null) {
+      continue;
+    }
+    const year = dateMatch[1];
+    const month = dateMatch[2].padStart(2, "0");
+    const day = dateMatch[3].padStart(2, "0");
+    talkDate = `${year}-${month}-${day}`;
 
     // メッセージ（例: "22:07   Test    おはよう"）
-    const messageMatch = trimmedRow.match(/^(\d{2}:\d{2})\t+([^\t]+)?\t+(.+)$/);
+    const messageMatch = trimmedRow.match(
+      /^(\d{1,2}:\d{2})\t+([^\t]+)?\t+(.+)$/,
+    );
     if (messageMatch && talkDate) {
       const [_, time, userName, message] = messageMatch;
       console.log("name:", userName);
@@ -112,7 +123,7 @@ function parseTalkHistories(talk: string, yourName: string): TalkHistory[] {
         message,
       });
     }
-  });
+  }
 
   return TalkHistories;
 }

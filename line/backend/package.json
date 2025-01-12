@@ -20,12 +20,14 @@
     "build": "npx tsc && npx tsc-alias",
     "build:watch": "concurrently \"npx tsc --watch\" \"npx tsc-alias --watch\"",
     "start": "node dist/main.js",
-    "start:dev": "nodemon dist/main.js"
+    "start:dev": "nodemon dist/main.js",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "concurrently": "^9.1.0",
     "tsc-alias": "^1.8.10",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   }
 }
