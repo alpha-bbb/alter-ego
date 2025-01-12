@@ -222,16 +222,7 @@ export const webhookHandler = async (
           const messageNumber = e.postback.data;
 
           await sendQuestionnaire(messageNumber);
-
-          await client.replyMessage({
-            replyToken: e.replyToken,
-            messages: [
-              {
-                type: "text",
-                text: `You selected message number: ${messageNumber}`,
-              },
-            ],
-          });
+          console.log("Questionnaire sent");
         }
 
         if (e.type === "message" && e.message.type === "file") {
