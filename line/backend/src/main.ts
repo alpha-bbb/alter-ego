@@ -1,4 +1,5 @@
 import { config } from "@/config.js";
+import { copyHandler } from "@/functions/copy.js";
 import { webhookHandler } from "@/functions/webhook.js";
 import express from "express";
 
@@ -11,6 +12,7 @@ app.get("/", (_, res) => {
 });
 app.get("/webhook", webhookHandler);
 app.post("/webhook", webhookHandler);
+app.get("/copy", copyHandler);
 
 app.listen(config.port, () => {
   console.log(`http://localhost:${config.port}/`);

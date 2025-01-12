@@ -1,12 +1,12 @@
 import { config } from "@/config.js";
 import {
   BackendService,
+  SubmitUserChoiceRequestSchema,
   TalkRequestSchema,
 } from "@/gen/grpc/backend/v1/backend_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
 import { createGrpcTransport } from "@connectrpc/connect-node";
-import type { Message } from "@line/bot-sdk";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
 import express from "express";
@@ -50,6 +50,22 @@ async function sendTalkRequest(
     const response = await BackendClient.talk(request);
     console.log("Response:", response.message);
     return response.message;
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+async function sendQuestionnaire(messageNumber: string): Promise<any> {
+  try {
+    const request = create(SubmitUserChoiceRequestSchema, {
+      choice: messageNumber,
+    });
+
+    const response = await BackendClient.submitUserChoice(request);
+    console.log("Response:", response);
+    return response;
   } catch (error) {
     console.error("Error:", error);
     return [];
@@ -201,6 +217,22 @@ export const webhookHandler = async (
             console.log("Error", e);
           }
         }
+        if (e.type === "postback") {
+          console.log("Postback data:", e.postback.data);
+          const messageNumber = e.postback.data;
+
+          await sendQuestionnaire(messageNumber);
+
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: `You selected message number: ${messageNumber}`,
+              },
+            ],
+          });
+        }
 
         if (e.type === "message" && e.message.type === "file") {
           console.log("res:", e);
@@ -256,8 +288,8 @@ export const webhookHandler = async (
                 text: message[i],
               });
             }
-            // ボタンテンプレートメッセージ
-            const buttonTemplateMessage: Message = {
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const buttonTemplateMessage: any = {
               type: "template",
               altText: "This is a buttons template",
               template: {
@@ -268,14 +300,89 @@ export const webhookHandler = async (
                 text: "Which message do you want to copy?",
                 actions: [
                   {
-                    type: "uri",
+                    type: "clipboard",
                     label: "1",
-                    uri: "https://7653-180-44-62-159.ngrok-free.app/copy",
+                    clipboardText: messages[0].text,
+                  },
+                  {
+                    type: "clipboard",
+                    label: "2",
+                    clipboardText: messages[1].text,
+                  },
+                  {
+                    type: "clipboard",
+                    label: "3",
+                    clipboardText: messages[2].text,
                   },
                 ],
               },
             };
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const buttonTemplateQuestionnaire: any = {
+              type: "flex",
+              altText: "どのメッセージがよかったですか？",
+              contents: {
+                type: "bubble",
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "どのメッセージがよかったですか？",
+                      wrap: true,
+                      weight: "regular",
+                      size: "md",
+                      color: "#222222",
+                      margin: "none",
+                    },
+                  ],
+                  spacing: "sm",
+                },
+                footer: {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "1",
+                        data: "1",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "2",
+                        data: "2",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "3",
+                        data: "3",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                  ],
+                  spacing: "sm",
+                },
+              },
+            };
             choices.push(buttonTemplateMessage);
+            choices.push(buttonTemplateQuestionnaire);
             await client.replyMessage({
               replyToken: e.replyToken,
               messages: choices,
