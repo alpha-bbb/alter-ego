@@ -10,8 +10,6 @@ import { createGrpcTransport } from "@connectrpc/connect-node";
 import { messagingApi } from "@line/bot-sdk";
 import type { Request, Response } from "express";
 import express from "express";
-import sharp from "sharp";
-// import { createWorker } from "tesseract.js";
 
 const app = express();
 app.use(express.json());
@@ -123,100 +121,6 @@ export const webhookHandler = async (
     if (req.body.events && req.body.events.length > 0) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
-        // if (e.type === "message" && e.message.type === "text") {
-        //   console.log("Replying to message:", e.message.text);
-        //   await client.replyMessage({
-        //     replyToken: e.replyToken,
-        //     messages: [{ type: "text", text: e.message.text }],
-        //   });
-        // }
-        if (e.type === "message" && e.message.type === "image") {
-          console.log("res:", e);
-          try {
-            const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
-
-            const response = await fetch(endpoint, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
-              },
-            });
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch content: ${response.statusText}`,
-              );
-            }
-
-            const imageBuffer = await response.arrayBuffer();
-            const imageJpeg = await sharp(imageBuffer)
-              .jpeg({ quality: 90 }) // 画像の品質を指定 (90%)
-              .toBuffer();
-            // (async () => {
-            //   const worker = await createWorker("jpn");
-            //   const ret = await worker.recognize(imageJpeg);
-            //   console.log("image text!:", ret.data.text);
-            //   await worker.terminate();
-            // })();
-
-            const DIFY_API_URL = "http://dify.alter-ego.jtj.jp/v1";
-            const DIFY_API_KEY = "app-UXq7yOxpjZBRKBQoBljCFaTP";
-
-            const formData = new FormData();
-            const mimeType = "image/jpeg";
-            const fileName = "image.jpg";
-            const blob = new Blob([imageJpeg], { type: mimeType });
-            const file = new File([blob], fileName, { type: mimeType });
-            formData.append("file", file, file.name);
-            formData.append("user", "abc-123");
-            const uploadImage = await fetch(`${DIFY_API_URL}/files/upload`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${DIFY_API_KEY}`,
-              },
-              body: formData,
-            });
-            // const uploadedRes = JSON.stringify(uploadImage);
-            console.log("uploadedRes:", uploadImage);
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch content: ${response.statusText}`,
-              );
-            }
-            // const talkResponse = await fetch(`${DIFY_API_URL}/chat-messages`, {
-            //   method: "POST",
-            //   headers: {
-            //     Authorization: `Bearer ${DIFY_API_KEY}`,
-            //     "Content-Type": "application/json",
-            //   },
-            //   body: JSON.stringify({
-            //     files: [
-            //       {
-            //         type: "image",
-            //         transfer_method: "local_file",
-            //         upload_file_id: uploadedRes,
-            //       },
-            //     ],
-            //   }),
-            // });
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch content: ${response.statusText}`,
-              );
-            }
-
-            await client.replyMessage({
-              replyToken: e.replyToken,
-              messages: [
-                {
-                  type: "text",
-                  text: "画像を受け取りました。処理中です。",
-                },
-              ],
-            });
-          } catch (e) {
-            console.log("Error", e);
-          }
-        }
         if (e.type === "postback") {
           console.log("Postback data:", e.postback.data);
           const messageNumber = e.postback.data;
