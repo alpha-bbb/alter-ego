@@ -6,21 +6,20 @@ import (
 )
 
 func ConvertTalkHistoryToGRPCTalkResponse(histories []*entity.TalkHistory) []*llmpb.TalkHistory {
-	if histories == nil {
-		return nil
-	}
+    if histories == nil {
+        return nil
+    }
 
-	result := make([]*llmpb.TalkHistory, len(histories))
-	for i := range histories {
-		result[i] = &llmpb.TalkHistory{
-			Date: histories[i].Date,
-			User: &llmpb.User{
-				UserId: histories[i].User.UserID,
-				Name:   histories[i].User.Name,
-				Role:   llmpb.UserUserRole(histories[i].User.Role),
-			},
-			Message: histories[i].Message,
-		}
-	}
-	return result
+    result := make([]*llmpb.TalkHistory, len(histories))
+    for i := range histories {
+        result[i] = &llmpb.TalkHistory{
+            Date: histories[i].Date,
+            User: &llmpb.User{
+                UserId: histories[i].User.UserID,
+                Name:   histories[i].User.Name,
+            },
+            Message: histories[i].Message,
+        }
+    }
+    return result
 }
