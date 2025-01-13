@@ -1,3 +1,15 @@
+# 開発用ビルドステージ
+FROM golang:1.23-alpine AS dev
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+RUN go install github.com/air-verse/air@latest
+
+COPY . .
+
+# 本番用ビルドステージ
 FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
@@ -6,14 +18,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-
 RUN go build -o app ./main.go
 
+# ランタイム用ステージ
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/app /app/
+COPY --from=builder /app/app .
 
 EXPOSE 50051
 
