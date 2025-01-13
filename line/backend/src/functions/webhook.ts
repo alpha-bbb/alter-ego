@@ -169,7 +169,8 @@ export const webhookHandler = async (
             const decoder = new TextDecoder("utf-8");
             const talk = decoder.decode(buffer);
             console.log("file contents:", talk);
-            const match = talk.match(/\[LINE\] (.*?)とのトーク履歴/);
+            // TODO: こちらに関して、多言語に対応する必要がある
+            const match = talk.match(/\[LINE\] (?:Chat history with|.+とのトーク履歴) (.+)/);
             let yourName = "noName";
             // biome-ignore lint/complexity/useOptionalChain: <explanation>
             if (match && match[1]) {
