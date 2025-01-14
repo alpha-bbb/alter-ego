@@ -16,7 +16,7 @@
 ## Docker立ち上げ
 
 ```sh
-docker compose up --build (本番環境では、docker compose -f docker-compose.yml up --build)
+docker compose up --build # (本番環境では、docker compose -f docker-compose.yml up --build)
 docker compose -f nginx/docker-compose.yml up --build
 ```
 

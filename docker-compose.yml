@@ -8,6 +8,9 @@ services:
       - "50051:50051"
     env_file:
       - ./backend/.env
+    volumes:
+      - .:/app
+      - /var/log/alter-ego:/var/log/alter-ego
     networks:
       - app_network
 

@@ -4,8 +4,6 @@ services:
   backend:
     build:
       target: dev
-    volumes:
-      - ./backend:/app
     command: air -c air.toml
 
   line-backend:
