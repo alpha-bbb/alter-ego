@@ -60,36 +60,69 @@ async function sendQuestionnaire(messageNumber: string): Promise<any> {
   }
 }
 
+export function getYourName(talk: string): string {
+  const match = talk.match(
+    /(?:\[LINE\] |Chat history with )(.+?)(?:とのトーク|\.txt)/,
+  );
+  return match ? match[1] : "noName";
+}
+
+export function getDate(row: string): string | undefined {
+  let talkDate: string | undefined = undefined;
+  const newDateMatch = row.match(
+    /^(\d{4})\/(\d{1,2})\/(\d{1,2})|^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (\d{1,2})\/(\d{1,2})\/(\d{4})/,
+  );
+
+  if (newDateMatch) {
+    if (newDateMatch[1] && newDateMatch[2] && newDateMatch[3]) {
+      // フォーマット: 2025/1/12(日)
+      const year = newDateMatch[1];
+      const month = newDateMatch[2].padStart(2, "0");
+      const day = newDateMatch[3].padStart(2, "0");
+      talkDate = `${year}-${month}-${day}`;
+    } else if (
+      newDateMatch[4] &&
+      newDateMatch[5] &&
+      newDateMatch[6] &&
+      newDateMatch[7]
+    ) {
+      // フォーマット: Sun, 1/12/2025
+      const month = newDateMatch[5].padStart(2, "0");
+      const day = newDateMatch[6].padStart(2, "0");
+      const year = newDateMatch[7];
+      talkDate = `${year}-${month}-${day}`;
+    } else {
+      talkDate = undefined;
+    }
+    return talkDate;
+  }
+}
+
 export function parseTalkHistories(
   talk: string,
   yourName: string,
 ): TalkHistory[] {
   const rows = talk.split("\n");
   const TalkHistories: TalkHistory[] = [];
-  let talkDate: string | null = null;
-  let dateMatch: RegExpMatchArray | null = null;
+  let talkDate: string | undefined = undefined;
 
   for (const row of rows) {
     const trimmedRow = row.trim();
     // 日付
-    const newDateMatch = trimmedRow.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-    if (newDateMatch) {
-      dateMatch = newDateMatch;
+    const newTalkDate = getDate(trimmedRow);
+    if (newTalkDate) {
+      talkDate = newTalkDate;
     }
-    if (dateMatch === null) {
+    if (talkDate === undefined) {
       continue;
     }
-    const year = dateMatch[1];
-    const month = dateMatch[2].padStart(2, "0");
-    const day = dateMatch[3].padStart(2, "0");
-    talkDate = `${year}-${month}-${day}`;
-
     // メッセージ（例: "22:07   Test    おはよう"）
     const messageMatch = trimmedRow.match(
-      /^(\d{1,2}:\d{2})\t+([^\t]+)?\t+(.+)$/,
+      /^(\d{1,2}):(\d{2})\t+([^\t]+)?\t+(.+)$/,
     );
     if (messageMatch && talkDate) {
-      const [_, time, userName, message] = messageMatch;
+      const [_, hour, minutes, userName, message] = messageMatch;
+      const time = `${hour.padStart(2, "0")}:${minutes}`;
       console.log("name:", userName);
       const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
 
@@ -170,13 +203,8 @@ export const webhookHandler = async (
             const talk = decoder.decode(buffer);
             console.log("file contents:", talk);
             // TODO: こちらに関して、多言語に対応する必要がある
-            const match = talk.match(/\[LINE\] (?:Chat history with|.+とのトーク履歴) (.+)/);
-            let yourName = "noName";
-            // biome-ignore lint/complexity/useOptionalChain: <explanation>
-            if (match && match[1]) {
-              yourName = match[1];
-              console.log("Hostname:", yourName);
-            }
+            const yourName = getYourName(talk);
+            console.log("Hostname:", yourName);
 
             const TalkHistories = parseTalkHistories(talk, yourName);
             console.log("TalkHistories:", TalkHistories);
