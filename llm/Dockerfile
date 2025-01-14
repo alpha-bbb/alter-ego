@@ -1,33 +1,39 @@
-# 開発用ビルドステージ
-FROM node:22-alpine AS dev
+# ベースイメージ（開発用ステージ）
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS dev
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# 環境変数
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
-COPY . ./
+# 必要なツールとライブラリをインストール
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# 本番用ビルドステージ
-FROM node:22-alpine AS builder
+# 依存関係のコピーとインストール（開発用を含む）
+COPY pyproject.toml uv.lock /app/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --dev
+
+# ソースコードをコピー
+COPY . /app
+
+# 本番用ステージ
+FROM python:3.13-slim-bookworm AS prod
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# 必要なファイルと依存関係をコピー
+COPY --from=dev /app /app
+COPY --from=dev /app/.venv /app/.venv
 
-COPY . ./
-RUN pnpm run build
+# 仮想環境のパスを環境変数に設定
+ENV PATH="/app/.venv/bin:$PATH"
 
-# ランタイム用ステージ
-FROM node:22-alpine
-
-WORKDIR /app
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
-
+# gRPCポートを公開
 EXPOSE 50052
 
-CMD ["node", "dist/server/index.js"]
+# エントリポイント
+CMD ["python", "src/server/main.py"]

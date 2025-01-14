@@ -9,7 +9,7 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - .:/app
+      - ./backend:/app
       - /var/log/alter-ego:/var/log/alter-ego
     networks:
       - app_network
