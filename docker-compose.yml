@@ -1,44 +1,39 @@
-# 開発環境用
 version: '3.8'
+
 services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
-    container_name: backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "50051:50051"
-    volumes:
-      - ./backend:/app
     env_file:
       - ./backend/.env
-    command: >
-      ash -c "go run main.go"
+    volumes:
+      - .:/app
+      - /var/log/alter-ego:/var/log/alter-ego
+    networks:
+      - app_network
 
   line-backend:
     build:
       context: ./line/backend
-      dockerfile: Dockerfile
-    container_name: line_backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "3000:3000"
     env_file:
       - ./line/backend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
 
   llm:
     build:
       context: ./llm
-      dockerfile: Dockerfile
-    container_name: llm
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "50052:50052"
     env_file:
       - ./llm/.env
-    command: >
-      ash -c "node dist/server/index.js"
+    ports:
+      - "50052:50052"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
