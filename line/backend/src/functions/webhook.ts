@@ -60,13 +60,6 @@ async function sendQuestionnaire(messageNumber: string): Promise<any> {
   }
 }
 
-export function getYourName(talk: string): string {
-  const match = talk.match(
-    /(?:\[LINE\] |Chat history with )(.+?)(?:とのトーク|\.txt)/,
-  );
-  return match ? match[1] : "noName";
-}
-
 export function getDate(row: string): string | undefined {
   let talkDate: string | undefined = undefined;
   const newDateMatch = row.match(
@@ -100,7 +93,7 @@ export function getDate(row: string): string | undefined {
 
 export function parseTalkHistories(
   talk: string,
-  yourName: string,
+  selfName: string,
 ): TalkHistory[] {
   const rows = talk.split("\n");
   const TalkHistories: TalkHistory[] = [];
@@ -128,19 +121,19 @@ export function parseTalkHistories(
 
       const name = userName || "Unknown";
       const userId =
-        name === yourName
-          ? `${yourName}02`
+        name === selfName
+          ? `${selfName}01`
           : name === "Unknown"
             ? "Unknown"
-            : `${name}01`;
+            : `${name}02`;
       const role = (() => {
         switch (name) {
-          case yourName:
-            return User_UserRole.YOU;
+          case selfName:
+            return User_UserRole.SELF;
           case "Unknown":
             return User_UserRole.UNSPECIFIED;
           default:
-            return User_UserRole.SELF;
+            return User_UserRole.YOU;
         }
       })();
 
@@ -169,6 +162,18 @@ export const webhookHandler = async (
     if (req.body.events && req.body.events.length > 0) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
+        let selfName = "noName";
+        if (e.source?.userId) {
+          const userId = e.source.userId;
+
+          // LINEユーザーのプロフィールを取得
+          const profile = await client.getProfile(userId);
+
+          console.log("ユーザー名:", profile.displayName);
+          console.log("ユーザーID:", profile.userId);
+          selfName = profile.displayName;
+        }
+
         if (e.type === "postback") {
           console.log("Postback data:", e.postback.data);
           const messageNumber = e.postback.data;
@@ -203,10 +208,8 @@ export const webhookHandler = async (
             const talk = decoder.decode(buffer);
             console.log("file contents:", talk);
             // TODO: こちらに関して、多言語に対応する必要がある
-            const yourName = getYourName(talk);
-            console.log("Hostname:", yourName);
 
-            const TalkHistories = parseTalkHistories(talk, yourName);
+            const TalkHistories = parseTalkHistories(talk, selfName);
             console.log("TalkHistories:", TalkHistories);
             let message: string[] = [];
             if (TalkHistories) {
