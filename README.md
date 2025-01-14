@@ -22,3 +22,11 @@ docker compose -f nginx/docker-compose.yml up --build
 
 各README.mdを参照。
 
+## ローカル環境を公開
+
+ngrokがおすすめ。下記のサイトが参考になる。
+[Node.js & TypeScriptでLINEBot入門（1）：チャットボット開発の流れと実践方法 | Go-Tech Blog](https://go-tech.blog/nodejs/line-chat-bot/)
+
+```sh
+ngrok http 3000
+```
