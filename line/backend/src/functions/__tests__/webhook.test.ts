@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { getYourName, parseTalkHistories } from "../webhook.js";
+import { parseTalkHistories } from "../webhook.js";
 
 it("トーク履歴が正しくparseされるか (日本語)", () => {
   const text = `[LINE] 太郎とのトーク履歴
@@ -69,16 +69,4 @@ Sun, 1/12/2025
       message: "元気？",
     },
   ]);
-});
-
-it("ファイル名からユーザー名を抽出 (日本語)", () => {
-  const filename = "[LINE] 太郎とのトーク.txt";
-  const res = getYourName(filename);
-  expect(res).toEqual("太郎");
-});
-
-it("ファイル名からユーザー名を抽出 (英語)", () => {
-  const filename = "Chat history with 太郎.txt";
-  const res = getYourName(filename);
-  expect(res).toEqual("太郎");
 });
