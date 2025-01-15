@@ -21,6 +21,7 @@ func HandleTalk(ctx context.Context, req *backendpb.TalkRequest, llmClient serve
 	// 既存の処理
 	entityTalkHistory := convert.ConvertTalkHistoryFromGRPCTalkRequest(req)
 	llmHistories := convert.ConvertTalkHistoryToGRPCTalkResponse(entityTalkHistory)
+
 	llmRequest := &llmpb.TalkRequest{Histories: llmHistories}
 	llmResponse, err := llmClient.Talk(ctx, llmRequest)
 	if err != nil {
