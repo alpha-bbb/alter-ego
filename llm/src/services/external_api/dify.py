@@ -53,7 +53,7 @@ class DifyClient:
 dify_client = DifyClient()
 
 
-async def call_dify_talk(input_histories: List[TalkHistory]) -> Dict[str, List[str]]:
+async def call_dify_talk(input_histories: list[TalkHistory]) -> dict[str, list[str]]:
     """
     Dify APIを呼び出してチャット応答を取得
 
