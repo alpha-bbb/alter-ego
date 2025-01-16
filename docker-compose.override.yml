@@ -4,6 +4,9 @@ services:
   backend:
     build:
       target: dev
+    volumes:
+      - ./backend:/app
+      - /var/log/alter-ego:/var/log/alter-ego
     command: air -c air.toml
 
   line-backend:
@@ -18,4 +21,9 @@ services:
       target: dev
     volumes:
       - ./llm:/app
-    command: pnpm run dev
+    ports:
+      - "50052:50052"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    command: uv run watchdog_runner.py
