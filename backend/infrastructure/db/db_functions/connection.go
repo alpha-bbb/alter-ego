@@ -29,7 +29,7 @@ func Connect() (*mongo.Client, *mongo.Database, *mongo.Collection, error) {
 		return nil, nil, nil, err
 	}
 
-	// 利用する DB、Collection の指定（必要に応じて変更してください）
+	// 利用する DB、Collection の指定
 	db := client.Database("sample_conversations")
 	coll := db.Collection("conversations")
 

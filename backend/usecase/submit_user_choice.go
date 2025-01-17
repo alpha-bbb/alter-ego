@@ -3,8 +3,9 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
+
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -12,104 +13,48 @@ import (
 
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 	"github.com/alpha-bbb/alter-ego/backend/infrastructure/db/db_functions"
-	"github.com/alpha-bbb/alter-ego/backend/infrastructure/log"
 )
 
-const (
-	logDir      = "./logs"
-	logFilePath = "./logs/user_choices.log"
-)
-
-// createLogDirectory ensures the log directory exists.
-func createLogDirectory() error {
-	if _, err := os.Stat(logDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(logDir, 0755); err != nil {
-			return fmt.Errorf("failed to create log directory: %w", err)
-		}
-	}
-	return nil
-}
-
-// createLogFile ensures the log file exists.
-func createLogFile() error {
-	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
-		file, err := os.Create(logFilePath)
-		if err != nil {
-			return fmt.Errorf("failed to create log file: %w", err)
-		}
-		file.Close()
-	}
-	return nil
-}
-
-// setupLogger initializes the logger with file and console output.
+// setupLogger はコンソール出力を使用してロガーを初期化します。
 func setupLogger() (*zap.Logger, error) {
-	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %w", err)
-	}
-
-	fileCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
-		zapcore.AddSync(file),
-		zap.InfoLevel,
-	)
-
 	consoleCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
 		zapcore.Lock(os.Stdout),
 		zap.InfoLevel,
 	)
 
-	logger := zap.New(zapcore.NewTee(fileCore, consoleCore))
+	logger := zap.New(consoleCore)
 	return logger, nil
 }
 
-// SubmitUserChoice handles user choice submissions.
+// SubmitUserChoice はユーザー選択の送信を処理します。
 func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceRequest) (*backendpb.SubmitUserChoiceResponse, error) {
-	logger, err := log.NewLogger()
+	// ロガーをセットアップします。
+	logger, err := setupLogger()
 	if err != nil {
-		return nil, err
-	}
-	// Ensure log directory and file exist.
-	if err := createLogDirectory(); err != nil {
-		logger.Error("Failed to create log directory: %v\n", zap.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("failed to setup logger: %w", err)
 	}
 
-	if err := createLogFile(); err != nil {
-		logger.Error("Failed to create log file: %v\n", zap.Error(err))
-		return nil, err
-	}
-
-	// Set up the logger.
-	logger_store, err := setupLogger()
-	if err != nil {
-		logger.Error("Failed to setup logger: %v\n", zap.Error(err))
-		return nil, err
-	}
-
-	// Validate the request.
+	// リクエストを検証します。
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
-		logger_store.Error("Validation failed",
+		logger.Error("Validation failed",
 			zap.String("choice", req.GetChoice()),
 			zap.Error(err),
 		)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// Log the user choice.
-	logger_store.Info("Received user choice",
+	// ユーザーの選択をログに記録する。
+	logger.Info("Received user choice",
 		zap.String("choice", req.GetChoice()),
 		zap.Time("timestamp", time.Now()),
 	)
 
-	// MongoDB に接続
+	// MongoDBに接続します。
 	client, _, coll, err := db_functions.Connect()
 	if err != nil {
-		logger.Info(err.Error())
-		logger.Error("Failed to connect to MongoDB")
+		logger.Error("Failed to connect to MongoDB", zap.Error(err))
 		return nil, err
 	}
 	defer func() {
@@ -118,14 +63,14 @@ func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceReques
 		}
 	}()
 
-	// LLM のレスポンスを MongoDB に更新
+	// LLMのレスポンスをMongoDBに更新します。
 	_, err = db_functions.UpdateConversationChoice(ctx, coll, req)
 	if err != nil {
 		logger.Error("Failed to update conversation choice", zap.Error(err))
 		return nil, err
 	}
 
-	// Return the response.
+	// レスポンスを返します。
 	return &backendpb.SubmitUserChoiceResponse{
 		Status: backendpb.SubmitUserChoiceResponse_STATUS_OK,
 	}, nil
