@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
+	"github.com/alpha-bbb/alter-ego/backend/infrastructure/db/db_functions"
 	"github.com/alpha-bbb/alter-ego/backend/infrastructure/log"
 )
 
@@ -103,6 +104,26 @@ func SubmitUserChoice(ctx context.Context, req *backendpb.SubmitUserChoiceReques
 		zap.String("choice", req.GetChoice()),
 		zap.Time("timestamp", time.Now()),
 	)
+
+	// MongoDB に接続
+	client, _, coll, err := db_functions.Connect()
+	if err != nil {
+		logger.Info(err.Error())
+		logger.Error("Failed to connect to MongoDB")
+		return nil, err
+	}
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			logger.Error("Failed to disconnect MongoDB", zap.String("error", err.Error()))
+		}
+	}()
+
+	// LLM のレスポンスを MongoDB に更新
+	_, err = db_functions.UpdateConversationChoice(ctx, coll, req)
+	if err != nil {
+		logger.Error("Failed to update conversation choice", zap.Error(err))
+		return nil, err
+	}
 
 	// Return the response.
 	return &backendpb.SubmitUserChoiceResponse{
