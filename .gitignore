@@ -5,3 +5,12 @@ node_modules
 dist
 gen
 .DS_Store
+
+# python
+.venv
+.ruff_cache
+__pycache__
+# llm内のauto generate
+llm/llm/*
+llm/backend/*
+

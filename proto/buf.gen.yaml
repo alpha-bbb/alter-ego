@@ -15,9 +15,9 @@ plugins:
     out: ../backend/gen/grpc
     opt: paths=source_relative
   # llm
-  - plugin: buf.build/bufbuild/es
-    out: ../llm/src/gen/grpc
-    opt: target=ts
-  - plugin: buf.build/bufbuild/connect-es
-    out: ../llm/src/gen/grpc
-    opt: target=ts
+  - plugin: buf.build/protocolbuffers/python
+    out: ../llm
+  - plugin: buf.build/protocolbuffers/pyi
+    out: ../llm
+  - plugin: buf.build/grpc/python
+    out: ../llm
