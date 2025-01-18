@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -19,3 +17,7 @@ services:
     volumes:
       - ./llm:/app
     command: pnpm run dev
+
+  mongodb:
+    volumes:
+      - ./mongodb/db:/data/db

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -12,6 +10,8 @@ services:
       - /var/log/alter-ego:/var/log/alter-ego
     networks:
       - app_network
+    depends_on:
+      - mongodb
 
   line-backend:
     build:
@@ -30,6 +30,18 @@ services:
       - ./llm/.env
     ports:
       - "50052:50052"
+    networks:
+      - app_network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /var/lib/mongo:/data/db
+    env_file:
+      - ./mongodb/.env
     networks:
       - app_network
 
