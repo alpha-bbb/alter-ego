@@ -36,13 +36,14 @@ message User {
 }
 
 message TalkResponse {
-  string conversation_id = 1; // 会話履歴を一意に識別するID
-  repeated string message = 2; // 候補のメッセージ
+  repeated string message = 1; // 候補のメッセージ
+  string conversation_id = 2; // 会話履歴を一意に識別するID
 }
 
 message SubmitUserChoiceRequest {
-  string conversation_id = 1; // 会話履歴を一意に識別するID
-  string choice = 2; // 何番目の選択肢を選んだか (zero-based)
+  string choice = 1; // 何番目の選択肢を選んだか (zero-based)
+  string conversation_id = 2; // 会話履歴を一意に識別するID
+
 }
 
 message SubmitUserChoiceResponse {

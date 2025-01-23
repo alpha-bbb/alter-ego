@@ -144,7 +144,7 @@ export function parseTalkHistories(
       const [_, hour, minutes, userName, message] = messageMatch;
       const time = `${hour.padStart(2, "0")}:${minutes}`;
       console.log("name:", userName);
-      const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
+      const dateTime = `${talkDate}T${time}:00+09:00`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const userId =
@@ -217,6 +217,10 @@ export const webhookHandler = async (
 
           await sendQuestionnaire(conversationId, messageNumber);
           console.log("Questionnaire sent");
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [{ type: "text", text: "ご協力ありがとうございます！" }],
+          });
         }
 
         if (e.type === "message" && e.message.type === "file") {
@@ -314,9 +318,7 @@ export const webhookHandler = async (
                     {
                       type: "text",
                       text: "どのメッセージがよかったですか？",
-                      wrap: true,
-                      weight: "regular",
-                      size: "md",
+                      size: "sm",
                       color: "#222222",
                       margin: "none",
                     },
@@ -325,54 +327,61 @@ export const webhookHandler = async (
                 },
                 footer: {
                   type: "box",
-                  layout: "horizontal",
+                  layout: "vertical",
                   contents: [
                     {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "1",
-                        data: `1,${conversationId}`,
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "1",
+                            data: `1,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "2",
+                            data: `2,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "3",
+                            data: `3,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                      ],
+                      spacing: "sm",
                     },
                     {
                       type: "button",
                       style: "primary",
                       action: {
                         type: "postback",
-                        label: "2",
-                        data: `2,${conversationId}`,
+                        label: "なし",
+                        data: `4,${conversationId}`,
                       },
                       color: "#0E71EB",
                       height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "3",
-                        data: `3,${conversationId}`,
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: `なし,${conversationId}`,
-                        data: "4",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
+                      margin: "md",
                     },
                   ],
-                  spacing: "sm",
                 },
               },
             };
