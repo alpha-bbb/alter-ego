@@ -26,9 +26,27 @@ const transport = createGrpcTransport({
 console.log("transport:", transport);
 export const BackendClient = createClient(BackendService, transport);
 
+// async function sendTalkRequest(
+//   talkHistories: TalkHistory[],
+// ): Promise<string[]> {
+//   try {
+//     const request = create(TalkRequestSchema, {
+//       histories: talkHistories,
+//       actionKind: 1,
+//     });
+
+//     const response = await BackendClient.talk(request);
+//     console.log("Response:", response);
+//     console.log("Response:", response.message);
+//     return response.message;
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return [];
+//   }
+// }
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
-): Promise<string[]> {
+): Promise<{ messages: string[]; conversationId: string } | null> {
   try {
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
@@ -36,23 +54,32 @@ async function sendTalkRequest(
     });
 
     const response = await BackendClient.talk(request);
+    console.log("Response:", response);
     console.log("Response:", response.message);
-    return response.message;
+    return {
+      messages: response.message,
+      conversationId: response.conversationId,
+    };
   } catch (error) {
     console.error("Error:", error);
-    return [];
+    return null;
   }
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-async function sendQuestionnaire(messageNumber: string): Promise<any> {
+async function sendQuestionnaire(
+  conversationId: string,
+  messageNumber: string,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+): Promise<any> {
   try {
     const request = create(SubmitUserChoiceRequestSchema, {
+      conversationId: conversationId,
       choice: messageNumber,
     });
 
     const response = await BackendClient.submitUserChoice(request);
-    console.log("Response:", response);
+    console.log("ResponseSubmit:", response);
     return response;
   } catch (error) {
     console.error("Error:", error);
@@ -117,7 +144,7 @@ export function parseTalkHistories(
       const [_, hour, minutes, userName, message] = messageMatch;
       const time = `${hour.padStart(2, "0")}:${minutes}`;
       console.log("name:", userName);
-      const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
+      const dateTime = `${talkDate}T${time}:00+09:00`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const userId =
@@ -154,6 +181,14 @@ export function parseTalkHistories(
   return TalkHistories;
 }
 
+export function parseResponseData(data: string): {
+  choice: string;
+  conversationId: string;
+} {
+  const [choice, conversationId] = data.split(",");
+  return { choice, conversationId };
+}
+
 export const webhookHandler = async (
   req: Request,
   res: Response,
@@ -176,10 +211,16 @@ export const webhookHandler = async (
 
         if (e.type === "postback") {
           console.log("Postback data:", e.postback.data);
-          const messageNumber = e.postback.data;
+          const result = parseResponseData(e.postback.data);
+          const messageNumber = result.choice;
+          const conversationId = result.conversationId;
 
-          await sendQuestionnaire(messageNumber);
+          await sendQuestionnaire(conversationId, messageNumber);
           console.log("Questionnaire sent");
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [{ type: "text", text: "ご協力ありがとうございます！" }],
+          });
         }
 
         if (e.type === "message" && e.message.type === "file") {
@@ -212,8 +253,13 @@ export const webhookHandler = async (
             const TalkHistories = parseTalkHistories(talk, selfName);
             console.log("TalkHistories:", TalkHistories);
             let message: string[] = [];
+            let conversationId = "";
             if (TalkHistories) {
-              message = await sendTalkRequest(TalkHistories);
+              const talkResponse = await sendTalkRequest(TalkHistories);
+              if (talkResponse) {
+                message = talkResponse.messages;
+                conversationId = talkResponse.conversationId;
+              }
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const messages: any[] = [];
@@ -272,9 +318,7 @@ export const webhookHandler = async (
                     {
                       type: "text",
                       text: "どのメッセージがよかったですか？",
-                      wrap: true,
-                      weight: "regular",
-                      size: "md",
+                      size: "sm",
                       color: "#222222",
                       margin: "none",
                     },
@@ -283,43 +327,61 @@ export const webhookHandler = async (
                 },
                 footer: {
                   type: "box",
-                  layout: "horizontal",
+                  layout: "vertical",
                   contents: [
                     {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "1",
-                        data: "1",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "1",
+                            data: `1,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "2",
+                            data: `2,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                        {
+                          type: "button",
+                          style: "primary",
+                          action: {
+                            type: "postback",
+                            label: "3",
+                            data: `3,${conversationId}`,
+                          },
+                          color: "#0E71EB",
+                          height: "sm",
+                        },
+                      ],
+                      spacing: "sm",
                     },
                     {
                       type: "button",
                       style: "primary",
                       action: {
                         type: "postback",
-                        label: "2",
-                        data: "2",
+                        label: "なし",
+                        data: `4,${conversationId}`,
                       },
                       color: "#0E71EB",
                       height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "3",
-                        data: "3",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
+                      margin: "md",
                     },
                   ],
-                  spacing: "sm",
                 },
               },
             };
