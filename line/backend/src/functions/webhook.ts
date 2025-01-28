@@ -266,8 +266,7 @@ export const webhookHandler = async (
                 type: "buttons",
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
-                title: "Suggested messages",
-                text: "Which message do you want to copy?",
+                text: "どのメッセージをコピーしますか？",
                 actions: [
                   {
                     type: "clipboard",
@@ -290,7 +289,7 @@ export const webhookHandler = async (
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const buttonTemplateQuestionnaire: any = {
               type: "flex",
-              altText: "どのメッセージがよかったですか？",
+              altText: "アンケート：どのメッセージがよかったですか？",
               contents: {
                 type: "bubble",
                 body: {
@@ -299,7 +298,7 @@ export const webhookHandler = async (
                   contents: [
                     {
                       type: "text",
-                      text: "どのメッセージがよかったですか？",
+                      text: "アンケート：どの選択肢がよかったですか？",
                       size: "sm",
                       color: "#222222",
                       margin: "none",
