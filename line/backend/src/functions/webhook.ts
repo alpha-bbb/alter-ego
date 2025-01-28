@@ -26,24 +26,6 @@ const transport = createGrpcTransport({
 console.log("transport:", transport);
 export const BackendClient = createClient(BackendService, transport);
 
-// async function sendTalkRequest(
-//   talkHistories: TalkHistory[],
-// ): Promise<string[]> {
-//   try {
-//     const request = create(TalkRequestSchema, {
-//       histories: talkHistories,
-//       actionKind: 1,
-//     });
-
-//     const response = await BackendClient.talk(request);
-//     console.log("Response:", response);
-//     console.log("Response:", response.message);
-//     return response.message;
-//   } catch (error) {
-//     console.error("Error:", error);
-//     return [];
-//   }
-// }
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
 ): Promise<{ messages: string[]; conversationId: string } | null> {
