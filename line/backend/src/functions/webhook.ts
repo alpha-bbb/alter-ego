@@ -26,24 +26,6 @@ const transport = createGrpcTransport({
 console.log("transport:", transport);
 export const BackendClient = createClient(BackendService, transport);
 
-// async function sendTalkRequest(
-//   talkHistories: TalkHistory[],
-// ): Promise<string[]> {
-//   try {
-//     const request = create(TalkRequestSchema, {
-//       histories: talkHistories,
-//       actionKind: 1,
-//     });
-
-//     const response = await BackendClient.talk(request);
-//     console.log("Response:", response);
-//     console.log("Response:", response.message);
-//     return response.message;
-//   } catch (error) {
-//     console.error("Error:", error);
-//     return [];
-//   }
-// }
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
 ): Promise<{ messages: string[]; conversationId: string } | null> {
@@ -284,8 +266,7 @@ export const webhookHandler = async (
                 type: "buttons",
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
-                title: "Suggested messages",
-                text: "Which message do you want to copy?",
+                text: "どのメッセージをコピーしますか？",
                 actions: [
                   {
                     type: "clipboard",
@@ -308,7 +289,7 @@ export const webhookHandler = async (
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const buttonTemplateQuestionnaire: any = {
               type: "flex",
-              altText: "どのメッセージがよかったですか？",
+              altText: "アンケート：どのメッセージがよかったですか？",
               contents: {
                 type: "bubble",
                 body: {
@@ -317,7 +298,7 @@ export const webhookHandler = async (
                   contents: [
                     {
                       type: "text",
-                      text: "どのメッセージがよかったですか？",
+                      text: "アンケート：どの選択肢がよかったですか？",
                       size: "sm",
                       color: "#222222",
                       margin: "none",
