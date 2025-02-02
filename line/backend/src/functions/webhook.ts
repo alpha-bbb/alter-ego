@@ -195,6 +195,16 @@ export const webhookHandler = async (
               if (talkResponse) {
                 message = talkResponse.messages;
               }
+            } else {
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
+                  {
+                    type: "text",
+                    text: "エラーが発生しました。もう一度やり直してください",
+                  },
+                ],
+              });
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const messages: any[] = [];
@@ -202,13 +212,16 @@ export const webhookHandler = async (
             const choices: any[] = [];
             for (let i = 0; i < message.length; i++) {
               const index = i;
+              const noQuotationMessage = message[i]
+                .replace(/\「|\」/g, "")
+                .replace(/\n+$/, "");
               choices.push({
                 type: "text",
-                text: `${index + 1}: ${message[i]}`,
+                text: `${index + 1}: ${noQuotationMessage}`,
               });
               messages.push({
                 type: "text",
-                text: message[i],
+                text: noQuotationMessage,
               });
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -246,7 +259,7 @@ export const webhookHandler = async (
               messages: choices,
             });
           } catch (e) {
-            console.log("Error", e);
+            console.log("Error:", e);
           }
         }
       });
