@@ -2,7 +2,6 @@ import { config } from "@/config.js";
 import { imageToTalkHistories } from "@/functions/image_to_talk_histories.js";
 import {
   BackendService,
-  SubmitUserChoiceRequestSchema,
   type TalkHistory,
   TalkRequestSchema,
   User_UserRole,
@@ -29,7 +28,7 @@ export const BackendClient = createClient(BackendService, transport);
 
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
-): Promise<string[]> {
+): Promise<{ messages: string[] } | null> {
   try {
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
@@ -37,27 +36,14 @@ async function sendTalkRequest(
     });
 
     const response = await BackendClient.talk(request);
-    console.log("Response:", response.message);
-    return response.message;
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-async function sendQuestionnaire(messageNumber: string): Promise<any> {
-  try {
-    const request = create(SubmitUserChoiceRequestSchema, {
-      choice: messageNumber,
-    });
-
-    const response = await BackendClient.submitUserChoice(request);
     console.log("Response:", response);
-    return response;
+    console.log("Response:", response.message);
+    return {
+      messages: response.message,
+    };
   } catch (error) {
     console.error("Error:", error);
-    return [];
+    return null;
   }
 }
 
@@ -118,7 +104,7 @@ export function parseTalkHistories(
       const [_, hour, minutes, userName, message] = messageMatch;
       const time = `${hour.padStart(2, "0")}:${minutes}`;
       console.log("name:", userName);
-      const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
+      const dateTime = `${talkDate}T${time}:00+09:00`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const userId =
@@ -175,14 +161,6 @@ export const webhookHandler = async (
           selfName = profile.displayName;
         }
 
-        if (e.type === "postback") {
-          console.log("Postback data:", e.postback.data);
-          const messageNumber = e.postback.data;
-
-          await sendQuestionnaire(messageNumber);
-          console.log("Questionnaire sent");
-        }
-
         // 画像メッセージの場合（例: LINEの画像メッセージは type が "image"）
         if (e.type === "message" && e.message.type === "image") {
           console.log("画像メッセージを受信:", e);
@@ -207,11 +185,13 @@ export const webhookHandler = async (
             const buffer = await response.arrayBuffer();
             // OCR を実施して TalkHistory 配列を取得する
             const talkHistories = await imageToTalkHistories(buffer);
-
             console.log("TalkHistories:", talkHistories);
             let message: string[] = [];
             if (talkHistories) {
-              message = await sendTalkRequest(talkHistories);
+              const talkResponse = await sendTalkRequest(talkHistories);
+              if (talkResponse) {
+                message = talkResponse.messages;
+              }
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const messages: any[] = [];
@@ -236,8 +216,8 @@ export const webhookHandler = async (
                 type: "buttons",
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
-                title: "Suggested messages",
-                text: "Which message do you want to copy?",
+                title: "どのメッセージをコピーしますか？",
+                text: "番号を選んでください",
                 actions: [
                   {
                     type: "clipboard",
@@ -257,72 +237,7 @@ export const webhookHandler = async (
                 ],
               },
             };
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateQuestionnaire: any = {
-              type: "flex",
-              altText: "どのメッセージがよかったですか？",
-              contents: {
-                type: "bubble",
-                body: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "どのメッセージがよかったですか？",
-                      wrap: true,
-                      weight: "regular",
-                      size: "md",
-                      color: "#222222",
-                      margin: "none",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-                footer: {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "1",
-                        data: "1",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "2",
-                        data: "2",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "3",
-                        data: "3",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-              },
-            };
             choices.push(buttonTemplateMessage);
-            choices.push(buttonTemplateQuestionnaire);
             await client.replyMessage({
               replyToken: e.replyToken,
               messages: choices,
@@ -359,11 +274,14 @@ export const webhookHandler = async (
             console.log("file contents:", talk);
             // TODO: こちらに関して、多言語に対応する必要がある
 
-            const TalkHistories = parseTalkHistories(talk, selfName);
-            console.log("TalkHistories:", TalkHistories);
+            const talkHistories = parseTalkHistories(talk, selfName);
+            console.log("TalkHistories:", talkHistories);
             let message: string[] = [];
-            if (TalkHistories) {
-              message = await sendTalkRequest(TalkHistories);
+            if (talkHistories) {
+              const talkResponse = await sendTalkRequest(talkHistories);
+              if (talkResponse) {
+                message = talkResponse.messages;
+              }
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const messages: any[] = [];
@@ -388,8 +306,8 @@ export const webhookHandler = async (
                 type: "buttons",
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
-                title: "Suggested messages",
-                text: "Which message do you want to copy?",
+                title: "どのメッセージをコピーしますか？",
+                text: "番号を選んでください",
                 actions: [
                   {
                     type: "clipboard",
@@ -409,72 +327,7 @@ export const webhookHandler = async (
                 ],
               },
             };
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateQuestionnaire: any = {
-              type: "flex",
-              altText: "どのメッセージがよかったですか？",
-              contents: {
-                type: "bubble",
-                body: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "どのメッセージがよかったですか？",
-                      wrap: true,
-                      weight: "regular",
-                      size: "md",
-                      color: "#222222",
-                      margin: "none",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-                footer: {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "1",
-                        data: "1",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "2",
-                        data: "2",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "3",
-                        data: "3",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-              },
-            };
             choices.push(buttonTemplateMessage);
-            choices.push(buttonTemplateQuestionnaire);
             await client.replyMessage({
               replyToken: e.replyToken,
               messages: choices,
