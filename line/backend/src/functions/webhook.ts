@@ -187,6 +187,20 @@ export const webhookHandler = async (
             const buffer = await response.arrayBuffer();
             // OCR を実施して TalkHistory 配列を取得する
             talkHistories = await imageToTalkHistories(buffer);
+
+            console.log("TalkHistories:", talkHistories);
+            if (talkHistories == null) {
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
+                  {
+                    type: "text",
+                    text: "エラーが発生しました。もう一度やり直してください",
+                  },
+                ],
+              });
+              return;
+            }
           } catch (err) {
             console.error("画像処理エラー:", err);
           }
@@ -220,26 +234,29 @@ export const webhookHandler = async (
             // TODO: こちらに関して、多言語に対応する必要がある
 
             talkHistories = parseTalkHistories(talk, selfName);
+
+            console.log("TalkHistories:", talkHistories);
+            if (talkHistories == null) {
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
+                  {
+                    type: "text",
+                    text: "エラーが発生しました。もう一度やり直してください",
+                  },
+                ],
+              });
+              return;
+            }
           } catch (e) {
             console.log("Error:", e);
           }
         }
 
-        console.log("TalkHistories:", talkHistories);
         let message: string[] = [];
-        if (talkHistories == null) {
-          await client.replyMessage({
-            replyToken: e.replyToken,
-            messages: [
-              {
-                type: "text",
-                text: "エラーが発生しました。もう一度やり直してください",
-              },
-            ],
-          });
+        if (talkHistories === null) {
           return;
         }
-
         const talkResponse = await sendTalkRequest(talkHistories);
         if (talkResponse) {
           message = talkResponse.messages;
