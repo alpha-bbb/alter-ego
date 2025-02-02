@@ -1,4 +1,5 @@
 import { config } from "@/config.js";
+import { imageToTalkHistories } from "@/functions/image_to_talk_histories.js";
 import {
   BackendService,
   type TalkHistory,
@@ -160,6 +161,37 @@ export const webhookHandler = async (
           selfName = profile.displayName;
         }
 
+        let talkHistories: TalkHistory[] | null = null;
+
+        // 画像メッセージの場合（例: LINEの画像メッセージは type が "image"）
+        if (e.type === "message" && e.message.type === "image") {
+          console.log("画像メッセージを受信:", e);
+          try {
+            const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
+            console.log(
+              "env token",
+              config.line.messagingApiClient.channelAccessToken,
+            );
+            const response = await fetch(endpoint, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+              },
+            });
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image content: ${response.statusText}`,
+              );
+            }
+            // 画像のバイナリデータを ArrayBuffer として取得
+            const buffer = await response.arrayBuffer();
+            // OCR を実施して TalkHistory 配列を取得する
+            talkHistories = await imageToTalkHistories(buffer);
+          } catch (err) {
+            console.error("画像処理エラー:", err);
+          }
+        }
+
         if (e.type === "message" && e.message.type === "file") {
           console.log("res:", e);
           try {
@@ -187,81 +219,83 @@ export const webhookHandler = async (
             console.log("file contents:", talk);
             // TODO: こちらに関して、多言語に対応する必要がある
 
-            const TalkHistories = parseTalkHistories(talk, selfName);
-            console.log("TalkHistories:", TalkHistories);
-            let message: string[] = [];
-            if (TalkHistories) {
-              const talkResponse = await sendTalkRequest(TalkHistories);
-              if (talkResponse) {
-                message = talkResponse.messages;
-              }
-            } else {
-              await client.replyMessage({
-                replyToken: e.replyToken,
-                messages: [
-                  {
-                    type: "text",
-                    text: "エラーが発生しました。もう一度やり直してください",
-                  },
-                ],
-              });
-            }
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const messages: any[] = [];
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const choices: any[] = [];
-            for (let i = 0; i < message.length; i++) {
-              const index = i;
-              const noQuotationMessage = message[i]
-                .replace(/\「|\」/g, "")
-                .replace(/\n+$/, "");
-              choices.push({
-                type: "text",
-                text: `${index + 1}: ${noQuotationMessage}`,
-              });
-              messages.push({
-                type: "text",
-                text: noQuotationMessage,
-              });
-            }
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateMessage: any = {
-              type: "template",
-              altText: "This is a buttons template",
-              template: {
-                type: "buttons",
-                imageAspectRatio: "rectangle",
-                imageSize: "cover",
-                title: "どのメッセージをコピーしますか？",
-                text: "番号を選んでください",
-                actions: [
-                  {
-                    type: "clipboard",
-                    label: "1",
-                    clipboardText: messages[0].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "2",
-                    clipboardText: messages[1].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "3",
-                    clipboardText: messages[2].text,
-                  },
-                ],
-              },
-            };
-            choices.push(buttonTemplateMessage);
-            await client.replyMessage({
-              replyToken: e.replyToken,
-              messages: choices,
-            });
+            talkHistories = parseTalkHistories(talk, selfName);
           } catch (e) {
             console.log("Error:", e);
           }
         }
+
+        console.log("TalkHistories:", talkHistories);
+        let message: string[] = [];
+        if (talkHistories == null) {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "エラーが発生しました。もう一度やり直してください",
+              },
+            ],
+          });
+          return;
+        }
+
+        const talkResponse = await sendTalkRequest(talkHistories);
+        if (talkResponse) {
+          message = talkResponse.messages;
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const messages: any[] = [];
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const choices: any[] = [];
+        for (let i = 0; i < message.length; i++) {
+          const index = i;
+          const noQuotationMessage = message[i]
+            .replace(/\「|\」/g, "")
+            .replace(/\n+$/, "");
+          choices.push({
+            type: "text",
+            text: `${index + 1}: ${noQuotationMessage}`,
+          });
+          messages.push({
+            type: "text",
+            text: noQuotationMessage,
+          });
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const buttonTemplateMessage: any = {
+          type: "template",
+          altText: "This is a buttons template",
+          template: {
+            type: "buttons",
+            imageAspectRatio: "rectangle",
+            imageSize: "cover",
+            title: "どのメッセージをコピーしますか？",
+            text: "番号を選んでください",
+            actions: [
+              {
+                type: "clipboard",
+                label: "1",
+                clipboardText: messages[0].text,
+              },
+              {
+                type: "clipboard",
+                label: "2",
+                clipboardText: messages[1].text,
+              },
+              {
+                type: "clipboard",
+                label: "3",
+                clipboardText: messages[2].text,
+              },
+            ],
+          },
+        };
+        choices.push(buttonTemplateMessage);
+        await client.replyMessage({
+          replyToken: e.replyToken,
+          messages: choices,
+        });
       });
 
       await Promise.all(eventPromises);

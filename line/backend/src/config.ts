@@ -13,4 +13,7 @@ export const config = {
   backend: {
     url: process.env.BACKEND_URL || "",
   },
+  gcp: {
+    keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS || "",
+  },
 };
