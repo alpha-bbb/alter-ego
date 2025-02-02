@@ -17,8 +17,8 @@ it("トーク履歴が正しくparseされるか (日本語)", () => {
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "こんにちは！",
     },
@@ -28,8 +28,8 @@ it("トーク履歴が正しくparseされるか (日本語)", () => {
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "元気？",
     },
@@ -52,8 +52,8 @@ Sun, 1/12/2025
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "こんにちは！",
     },
@@ -63,8 +63,8 @@ Sun, 1/12/2025
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "元気？",
     },

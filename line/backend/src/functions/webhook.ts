@@ -1,4 +1,5 @@
 import { config } from "@/config.js";
+import { imageToTalkHistories } from "@/functions/image_to_talk_histories.js";
 import {
   BackendService,
   SubmitUserChoiceRequestSchema,
@@ -180,6 +181,155 @@ export const webhookHandler = async (
 
           await sendQuestionnaire(messageNumber);
           console.log("Questionnaire sent");
+        }
+
+        // 画像メッセージの場合（例: LINEの画像メッセージは type が "image"）
+        if (e.type === "message" && e.message.type === "image") {
+          console.log("画像メッセージを受信:", e);
+          try {
+            const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
+            console.log(
+              "env token",
+              config.line.messagingApiClient.channelAccessToken,
+            );
+            const response = await fetch(endpoint, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+              },
+            });
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image content: ${response.statusText}`,
+              );
+            }
+            // 画像のバイナリデータを ArrayBuffer として取得
+            const buffer = await response.arrayBuffer();
+            // OCR を実施して TalkHistory 配列を取得する
+            const talkHistories = await imageToTalkHistories(buffer);
+
+            console.log("TalkHistories:", talkHistories);
+            let message: string[] = [];
+            if (talkHistories) {
+              message = await sendTalkRequest(talkHistories);
+            }
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const messages: any[] = [];
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const choices: any[] = [];
+            for (let i = 0; i < message.length; i++) {
+              const index = i;
+              choices.push({
+                type: "text",
+                text: `${index + 1}: ${message[i]}`,
+              });
+              messages.push({
+                type: "text",
+                text: message[i],
+              });
+            }
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const buttonTemplateMessage: any = {
+              type: "template",
+              altText: "This is a buttons template",
+              template: {
+                type: "buttons",
+                imageAspectRatio: "rectangle",
+                imageSize: "cover",
+                title: "Suggested messages",
+                text: "Which message do you want to copy?",
+                actions: [
+                  {
+                    type: "clipboard",
+                    label: "1",
+                    clipboardText: messages[0].text,
+                  },
+                  {
+                    type: "clipboard",
+                    label: "2",
+                    clipboardText: messages[1].text,
+                  },
+                  {
+                    type: "clipboard",
+                    label: "3",
+                    clipboardText: messages[2].text,
+                  },
+                ],
+              },
+            };
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const buttonTemplateQuestionnaire: any = {
+              type: "flex",
+              altText: "どのメッセージがよかったですか？",
+              contents: {
+                type: "bubble",
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "どのメッセージがよかったですか？",
+                      wrap: true,
+                      weight: "regular",
+                      size: "md",
+                      color: "#222222",
+                      margin: "none",
+                    },
+                  ],
+                  spacing: "sm",
+                },
+                footer: {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "1",
+                        data: "1",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "2",
+                        data: "2",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                    {
+                      type: "button",
+                      style: "primary",
+                      action: {
+                        type: "postback",
+                        label: "3",
+                        data: "3",
+                      },
+                      color: "#0E71EB",
+                      height: "sm",
+                    },
+                  ],
+                  spacing: "sm",
+                },
+              },
+            };
+            choices.push(buttonTemplateMessage);
+            choices.push(buttonTemplateQuestionnaire);
+            await client.replyMessage({
+              replyToken: e.replyToken,
+              messages: choices,
+            });
+          } catch (err) {
+            console.error("画像処理エラー:", err);
+          }
         }
 
         if (e.type === "message" && e.message.type === "file") {
