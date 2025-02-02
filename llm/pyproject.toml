@@ -2,14 +2,20 @@
 name = "llm"
 version = "0.1.0"
 description = "LLM gRPC Service"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "grpcio>=1.62.0",
-    "grpcio-tools>=1.62.0",
+    "grpcio>=1.70.0",
+    "grpcio-tools>=1.70.0",
     "protobuf>=5.29.3",
-    "langchain>=0.1.12",
-    "langchain-core>=0.1.31",
+    "langchain>=0.3.17",
+    "langchain-core>=0.3.33",
     "python-dotenv>=1.0.1",
+    "langchain-openai>=0.3.3",
+    "langgraph>=0.2.69",
+    "langchain-community>=0.3.16",
+    "langchain-anthropic>=0.3.5",
+    "langchain-google-genai>=2.0.9",
+    "pydantic>=2.10.6",
 ]
 
 [build-system]
@@ -29,7 +35,6 @@ target-version = "py311"
 [dependency-groups]
 dev = [
     "watchdog>=6.0.0",
-    "ruff>=0.3.0",
     "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest-asyncio>=0.25.3",
 ]
