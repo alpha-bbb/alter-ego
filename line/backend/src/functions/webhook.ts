@@ -1,7 +1,6 @@
 import { config } from "@/config.js";
 import {
   BackendService,
-  SubmitUserChoiceRequestSchema,
   type TalkHistory,
   TalkRequestSchema,
   User_UserRole,
@@ -28,7 +27,7 @@ export const BackendClient = createClient(BackendService, transport);
 
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
-): Promise<{ messages: string[]; conversationId: string } | null> {
+): Promise<{ messages: string[] } | null> {
   try {
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
@@ -40,32 +39,10 @@ async function sendTalkRequest(
     console.log("Response:", response.message);
     return {
       messages: response.message,
-      conversationId: response.conversationId,
     };
   } catch (error) {
     console.error("Error:", error);
     return null;
-  }
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-async function sendQuestionnaire(
-  conversationId: string,
-  messageNumber: string,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-): Promise<any> {
-  try {
-    const request = create(SubmitUserChoiceRequestSchema, {
-      conversationId: conversationId,
-      choice: messageNumber,
-    });
-
-    const response = await BackendClient.submitUserChoice(request);
-    console.log("ResponseSubmit:", response);
-    return response;
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
   }
 }
 
@@ -163,14 +140,6 @@ export function parseTalkHistories(
   return TalkHistories;
 }
 
-export function parseResponseData(data: string): {
-  choice: string;
-  conversationId: string;
-} {
-  const [choice, conversationId] = data.split(",");
-  return { choice, conversationId };
-}
-
 export const webhookHandler = async (
   req: Request,
   res: Response,
@@ -189,20 +158,6 @@ export const webhookHandler = async (
           console.log("ユーザー名:", profile.displayName);
           console.log("ユーザーID:", profile.userId);
           selfName = profile.displayName;
-        }
-
-        if (e.type === "postback") {
-          console.log("Postback data:", e.postback.data);
-          const result = parseResponseData(e.postback.data);
-          const messageNumber = result.choice;
-          const conversationId = result.conversationId;
-
-          await sendQuestionnaire(conversationId, messageNumber);
-          console.log("Questionnaire sent");
-          await client.replyMessage({
-            replyToken: e.replyToken,
-            messages: [{ type: "text", text: "ご協力ありがとうございます！" }],
-          });
         }
 
         if (e.type === "message" && e.message.type === "file") {
@@ -235,12 +190,10 @@ export const webhookHandler = async (
             const TalkHistories = parseTalkHistories(talk, selfName);
             console.log("TalkHistories:", TalkHistories);
             let message: string[] = [];
-            let conversationId = "";
             if (TalkHistories) {
               const talkResponse = await sendTalkRequest(TalkHistories);
               if (talkResponse) {
                 message = talkResponse.messages;
-                conversationId = talkResponse.conversationId;
               }
             }
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -266,7 +219,8 @@ export const webhookHandler = async (
                 type: "buttons",
                 imageAspectRatio: "rectangle",
                 imageSize: "cover",
-                text: "どのメッセージをコピーしますか？",
+                title: "どのメッセージをコピーしますか？",
+                text: "番号を選んでください",
                 actions: [
                   {
                     type: "clipboard",
@@ -286,88 +240,7 @@ export const webhookHandler = async (
                 ],
               },
             };
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateQuestionnaire: any = {
-              type: "flex",
-              altText: "アンケート：どのメッセージがよかったですか？",
-              contents: {
-                type: "bubble",
-                body: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "アンケート：どの選択肢がよかったですか？",
-                      size: "sm",
-                      color: "#222222",
-                      margin: "none",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-                footer: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "box",
-                      layout: "horizontal",
-                      contents: [
-                        {
-                          type: "button",
-                          style: "primary",
-                          action: {
-                            type: "postback",
-                            label: "1",
-                            data: `1,${conversationId}`,
-                          },
-                          color: "#0E71EB",
-                          height: "sm",
-                        },
-                        {
-                          type: "button",
-                          style: "primary",
-                          action: {
-                            type: "postback",
-                            label: "2",
-                            data: `2,${conversationId}`,
-                          },
-                          color: "#0E71EB",
-                          height: "sm",
-                        },
-                        {
-                          type: "button",
-                          style: "primary",
-                          action: {
-                            type: "postback",
-                            label: "3",
-                            data: `3,${conversationId}`,
-                          },
-                          color: "#0E71EB",
-                          height: "sm",
-                        },
-                      ],
-                      spacing: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "なし",
-                        data: `4,${conversationId}`,
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                      margin: "md",
-                    },
-                  ],
-                },
-              },
-            };
             choices.push(buttonTemplateMessage);
-            choices.push(buttonTemplateQuestionnaire);
             await client.replyMessage({
               replyToken: e.replyToken,
               messages: choices,
