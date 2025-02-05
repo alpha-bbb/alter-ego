@@ -141,6 +141,30 @@ export function parseTalkHistories(
   return TalkHistories;
 }
 
+/**
+ * チャットにローディングアニメーションを表示する
+ *
+ * @param chatId
+ */
+async function loading_animation(chatId: string): Promise<void> {
+  const endpoint = "https://api.line.me/v2/bot/chat/loading/start";
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chatId: chatId,
+      loadingSeconds: 60,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch content: ${response.statusText}`);
+  }
+}
+
 export const webhookHandler = async (
   req: Request,
   res: Response,
@@ -149,17 +173,26 @@ export const webhookHandler = async (
     if (req.body.events && req.body.events.length > 0) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
-        let selfName = "noName";
-        if (e.source?.userId) {
-          const userId = e.source.userId;
-
-          // LINEユーザーのプロフィールを取得
-          const profile = await client.getProfile(userId);
-
-          console.log("ユーザー名:", profile.displayName);
-          console.log("ユーザーID:", profile.userId);
-          selfName = profile.displayName;
+        if (e.source?.userId == null) {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "エラーが発生しました。もう一度やり直してください",
+              },
+            ],
+          });
+          console.error("ユーザーIDが取得できませんでした。");
+          return;
         }
+        // LINEユーザーのプロフィールを取得
+        const profile = await client.getProfile(e.source.userId);
+
+        console.log("ユーザー名:", profile.displayName);
+        console.log("ユーザーID:", profile.userId);
+        const selfName = profile.displayName;
+        const userId = profile.userId;
 
         let talkHistories: TalkHistory[] | null = null;
 
@@ -167,11 +200,8 @@ export const webhookHandler = async (
         if (e.type === "message" && e.message.type === "image") {
           console.log("画像メッセージを受信:", e);
           try {
+            loading_animation(userId);
             const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
-            console.log(
-              "env token",
-              config.line.messagingApiClient.channelAccessToken,
-            );
             const response = await fetch(endpoint, {
               method: "GET",
               headers: {
@@ -209,11 +239,8 @@ export const webhookHandler = async (
         if (e.type === "message" && e.message.type === "file") {
           console.log("res:", e);
           try {
+            loading_animation(userId);
             const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
-            console.log(
-              "env token",
-              config.line.messagingApiClient.channelAccessToken,
-            );
             const response = await fetch(endpoint, {
               method: "GET",
               headers: {
