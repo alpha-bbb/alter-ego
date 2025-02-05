@@ -36,4 +36,7 @@
         "llm/.venv/lib/python3.12/site-packages",
     ],
     "python.analysis.typeCheckingMode": "basic",
+    "flake8.args": [
+        "--max-line-length=120",
+    ],
 }
