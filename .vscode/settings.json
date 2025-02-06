@@ -24,4 +24,19 @@
     "[dockerfile]": {
         "editor.defaultFormatter": "ms-azuretools.vscode-docker"
     },
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll.ruff": "always"
+        },
+    },
+    "python.analysis.extraPaths": [
+        "llm/.venv/lib/python3.12/site-packages",
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "flake8.args": [
+        "--max-line-length=120",
+    ],
 }
