@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 DIFY_API_URL = os.getenv("DIFY_API_URL", "https://api.dify.ai/v1")
 DIFY_API_KEY = os.getenv("DIFY_API_KEY", "")
-DIFY_KNOWLEDGE_BASE_API_KEY=os.getenv("DIFY_KNOWLEDGE_BASE_API_KEY", "")
+DIFY_KNOWLEDGE_BASE_API_KEY = os.getenv("DIFY_KNOWLEDGE_BASE_API_KEY", "")
 
 if not DIFY_API_URL or not DIFY_API_KEY:
     raise ValueError(
@@ -27,11 +27,16 @@ class DifyClient:
     """Dify APIクライアント"""
 
     def __init__(self) -> None:
-        raise NotImplementedError("DifyClient is a singleton class. Use the instance dify_client instead.")
+        raise NotImplementedError(
+            "DifyClient is a singleton class. Use the instance dify_client instead."
+        )
 
     async def close(self) -> None:
         """クライアントをクローズ"""
-        raise NotImplementedError("DifyClient is a singleton class. Use the instance dify_client instead.")
+        raise NotImplementedError(
+            "DifyClient is a singleton class. Use the instance dify_client instead."
+        )
+
 
 class DifyChatClient(DifyClient):
     """Dify Chat APIクライアント"""
@@ -49,8 +54,8 @@ class DifyChatClient(DifyClient):
         """クライアントをクローズ"""
         await self.client.aclose()
 
-class DifyKnowledgeBaseClient(DifyClient):
 
+class DifyKnowledgeBaseClient(DifyClient):
     def __init__(self) -> None:
         self.client = httpx.AsyncClient(
             base_url=DIFY_API_URL,
@@ -87,7 +92,9 @@ async def call_dify_talk(input_histories: list[TalkHistory]) -> dict[str, list[s
         response = await dify_chat_client.client.post(
             "/chat-messages",
             json={
-                "query": json.dumps([MessageToDict(history) for history in input_histories]),
+                "query": json.dumps(
+                    [MessageToDict(history) for history in input_histories]
+                ),
                 "inputs": {},
                 "response_mode": "blocking",
                 "user": "abc-123",
@@ -113,7 +120,10 @@ async def call_dify_talk(input_histories: list[TalkHistory]) -> dict[str, list[s
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise
 
-async def call_dify_retrieve(dataset_id: str, query: str, retrieval_model: dict) -> dict:
+
+async def call_dify_retrieve(
+    dataset_id: str, query: str, retrieval_model: dict
+) -> dict:
     """
     Dify APIの /datasets/{dataset_id}/retrieve エンドポイントを呼び出して
     Knowledge Base からチャンクを取得する。

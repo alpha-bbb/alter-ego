@@ -9,6 +9,7 @@ class ReloadHandler(FileSystemEventHandler):
     """
     ファイルの変更を監視し、gRPCサーバーを再起動するハンドラー
     """
+
     def __init__(self, command, watch_extensions=None):
         self.command = command
         self.process = None

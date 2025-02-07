@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableConfig
 from src.core.model import GraphState, SpeakingStyle
 
+
 async def analyze_style(
     state: GraphState,
     config: RunnableConfig,
@@ -45,19 +46,15 @@ async def analyze_style(
         # LLMに分析を依頼
         messages = [
             SystemMessage(content=system_prompt),
-            HumanMessage(content=my_histories)
+            HumanMessage(content=my_histories),
         ]
 
         speaking_style = await llm.ainvoke(messages, config)
 
         return {
-            "template_val": {
-                "speaking_style": speaking_style
-            },
+            "template_val": {"speaking_style": speaking_style},
         }
 
     except Exception as e:
         print(f"Error in analyze_style: {str(e)}")
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}

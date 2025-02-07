@@ -9,19 +9,19 @@ from src.services.llmService import LlmServiceServicer
 
 # ロギングの設定
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 async def serve() -> None:
     # gRPCサーバーの設定
     server = aio.server(
         futures.ThreadPoolExecutor(max_workers=10),
         options=[
-            ('grpc.max_send_message_length', 100 * 1024 * 1024),
-            ('grpc.max_receive_message_length', 100 * 1024 * 1024),
-        ]
+            ("grpc.max_send_message_length", 100 * 1024 * 1024),
+            ("grpc.max_receive_message_length", 100 * 1024 * 1024),
+        ],
     )
 
     # LLMサービスの実装をサーバーに登録
@@ -29,7 +29,7 @@ async def serve() -> None:
     add_LlmServiceServicer_to_server(llm_service, server)
 
     # サーバーのポート設定
-    listen_addr = '[::]:50052'
+    listen_addr = "[::]:50052"
     server.add_insecure_port(listen_addr)
 
     logger.info(f"Starting server on {listen_addr}")
@@ -44,6 +44,7 @@ async def serve() -> None:
         await server.stop(0)
         logger.info("Server stopped.")
 
+
 def main() -> None:
     """
     メイン関数：非同期サーバーを起動
@@ -53,6 +54,7 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Server failed: {e}")
         raise
+
 
 if __name__ == "__main__":
     main()

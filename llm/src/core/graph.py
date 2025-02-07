@@ -9,6 +9,8 @@ from src.core.nodes.style_analyzer import analyze_style
 from src.core.nodes.response_generator import generate_responses
 from src.core.nodes.create_prompt_template import create_prompt_template
 from src.core.nodes.join_template import join_template
+
+
 class AlterEgo:
     """Alter-goのメイングラフクラス"""
 
@@ -30,7 +32,6 @@ class AlterEgo:
         workflow.add_conditional_edges("convert_history", self._route_after_conversion)
         workflow.add_conditional_edges("analyze_action", self._route_after_analysis)
 
-
         workflow.add_edge("analyze_style", "join_template")
         workflow.add_edge("retrieve_knowledge", "join_template")
 
@@ -41,15 +42,16 @@ class AlterEgo:
 
         self.graph = workflow.compile()
 
-    def _route_after_conversion(self, state: GraphState) -> Literal["analyze_style", "join_template"]:
+    def _route_after_conversion(
+        self, state: GraphState
+    ) -> Literal["analyze_style", "join_template"]:
         """会話履歴変換後のルーティング"""
         if state.talk_histories:
             return "analyze_style"
         return "join_template"
 
     def _route_after_analysis(
-        self,
-        state: GraphState
+        self, state: GraphState
     ) -> Literal["retrieve_knowledge", "join_template"]:
         """行動分析後のルーティング"""
         if state.template_val.action_analysis.predicted_action == "お誘い":
@@ -57,7 +59,9 @@ class AlterEgo:
 
         return "join_template"
 
-    def _route_after_join(self, state: GraphState) -> Literal["generate_template", "join_template"]:
+    def _route_after_join(
+        self, state: GraphState
+    ) -> Literal["generate_template", "join_template"]:
         """
         state.template_val が存在すれば generate_template へ、
         存在しなければ join_template を再実行するようにルーティングする。
@@ -65,6 +69,7 @@ class AlterEgo:
         if state.template_ready:
             return "generate_template"
         return "join_template"
+
 
 # グラフのインスタンスを作成
 graph = AlterEgo().graph

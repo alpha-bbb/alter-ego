@@ -1,8 +1,11 @@
 from typing import Any, Dict
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_openai import ChatOpenAI
+
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
-from src.core.model import GraphState, ActionAnalysis
+from langchain_openai import ChatOpenAI
+
+from src.core.model import ActionAnalysis, GraphState
+
 
 async def analyze_action(
     state: GraphState,
@@ -40,19 +43,13 @@ async def analyze_action(
         # LLMに分析を依頼
         messages = [
             SystemMessage(content=system_prompt),
-            HumanMessage(content=state.talk_histories_markdown.conversations)
+            HumanMessage(content=state.talk_histories_markdown.conversations),
         ]
 
         analysis = await llm.ainvoke(messages, config)
 
-        return {
-            "template_val": {
-                "action_analysis": analysis
-            }
-        }
+        return {"template_val": {"action_analysis": analysis}}
 
     except Exception as e:
         print(f"Error in analyze_action: {str(e)}")
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}

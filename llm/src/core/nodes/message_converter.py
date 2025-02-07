@@ -2,6 +2,7 @@ from typing import Any
 from langchain_core.runnables import RunnableConfig
 from src.core.model import GraphState, Role, TalkHistory, MarkdownTalkHistories
 
+
 async def convert_history(
     state: GraphState,
     config: RunnableConfig,
@@ -19,31 +20,28 @@ async def convert_history(
     try:
         # 自分のトーク履歴とその他のトーク履歴を分離
         my_histories = [
-            history for history in state.talk_histories
+            history
+            for history in state.talk_histories
             if history.user.role == Role.SELF
         ]
         other_histories = [
-            history for history in state.talk_histories
-            if history.user.role == Role.YOU
+            history for history in state.talk_histories if history.user.role == Role.YOU
         ]
 
         # markdown形式に変換
         markdown_histories = {
             "conversations": _to_markdown(state.talk_histories),
             "my_histories": _to_markdown(my_histories),
-            "other_histories": _to_markdown(other_histories)
+            "other_histories": _to_markdown(other_histories),
         }
 
-        return {
-            "talk_histories_markdown" :MarkdownTalkHistories(**markdown_histories)
-        }
+        return {"talk_histories_markdown": MarkdownTalkHistories(**markdown_histories)}
 
     except Exception as e:
         # エラーハンドリング
         print(f"Error in convert_history: {str(e)}")
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}
+
 
 def _to_markdown(histories: list[TalkHistory]) -> str:
     """

@@ -3,6 +3,7 @@ from langchain_core.runnables import RunnableConfig
 from src.core.model import GraphState, Knowledge
 from src.services.external_api.dify import call_dify_retrieve
 
+
 async def retrieve_knowledge(
     state: GraphState,
     config: RunnableConfig,
@@ -46,31 +47,30 @@ async def retrieve_knowledge(
         # ]
 
         # 関連ドキュメントの検索
-        retrieved_docs = await call_dify_retrieve(dataset_id="ea577e2f-7fc8-408a-bd8c-2e8cc254ea37", query=query, retrieval_model={
-            "search_method": "hybrid_search",
-            "reranking_enable": True,
-            "reranking_mode":"reranking_model",
-            "reranking_model": {
-                "reranking_provider_name": "cohere",
-                "reranking_model_name": "rerank-multilingual-v3.0"
+        retrieved_docs = await call_dify_retrieve(
+            dataset_id="ea577e2f-7fc8-408a-bd8c-2e8cc254ea37",
+            query=query,
+            retrieval_model={
+                "search_method": "hybrid_search",
+                "reranking_enable": True,
+                "reranking_mode": "reranking_model",
+                "reranking_model": {
+                    "reranking_provider_name": "cohere",
+                    "reranking_model_name": "rerank-multilingual-v3.0",
+                },
+                "weights": None,
+                "top_k": 3,
+                "score_threshold_enabled": False,
+                "score_threshold": None,
             },
-            "weights": None,
-            "top_k": 3,
-            "score_threshold_enabled": False,
-            "score_threshold": None
-        })
+        )
 
         return {
             "template_val": {
-                "knowledge": [
-                    Knowledge(content=doc)
-                    for doc in retrieved_docs
-                ]
+                "knowledge": [Knowledge(content=doc) for doc in retrieved_docs]
             }
         }
 
     except Exception as e:
         print(f"Error in retrieve_knowledge: {str(e)}")
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}

@@ -1,11 +1,13 @@
 from src.core.model import GraphState
 
+
 def create_prompt_template(state: GraphState) -> dict[str, str]:
     """プロンプトテンプレートを作成"""
 
     # 話し方の特徴を文字列化
     style = state.template_val.speaking_style
-    style_text = """
+    style_text = (
+        """
 ### 私の話し方
 
 #### 1. Dialect
@@ -19,17 +21,22 @@ def create_prompt_template(state: GraphState) -> dict[str, str]:
 
 ...
     """.format(
-        dialect_type=style.dialect.type if style else "",
-        dialect_examples=", ".join(style.dialect.examples) if style else "",
-        tone_type=style.tone.type if style else "",
-        tone_description=style.tone.description if style else "",
-        tone_examples=", ".join(style.tone.examples) if style else "",
-    ) if style else ""
+            dialect_type=style.dialect.type if style else "",
+            dialect_examples=", ".join(style.dialect.examples) if style else "",
+            tone_type=style.tone.type if style else "",
+            tone_description=style.tone.description if style else "",
+            tone_examples=", ".join(style.tone.examples) if style else "",
+        )
+        if style
+        else ""
+    )
 
     # 知識ベースの文字列化
-    knowledge_text = "\n".join([
-        f"- {k.content}" for k in state.template_val.knowledge
-    ]) if state.template_val.knowledge else ""
+    knowledge_text = (
+        "\n".join([f"- {k.content}" for k in state.template_val.knowledge])
+        if state.template_val.knowledge
+        else ""
+    )
 
     # 最終的なプロンプト
     template = f"""
@@ -58,6 +65,4 @@ def create_prompt_template(state: GraphState) -> dict[str, str]:
 - 会話を終わらせる一言のみを出力してください。
 """
 
-    return {
-        "prompt_template": template
-    }
+    return {"prompt_template": template}
