@@ -25,7 +25,3 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     command: uv run watchdog_runner.py
-
-  postgres:
-    volumes:
-      - ./postgresql/data:/var/lib/postgresql/data

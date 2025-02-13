@@ -7,6 +7,7 @@ option go_package = "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 service BackendService {
   rpc Talk(TalkRequest) returns (TalkResponse) {}
   rpc SubmitUserChoice(SubmitUserChoiceRequest) returns (SubmitUserChoiceResponse) {}
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse) {}
 }
 
 message TalkRequest {
@@ -35,8 +36,18 @@ message User {
   UserRole role = 3; // ユーザーの役割
 }
 
+// 会話のレスポンス
+// 通常は候補のメッセージを返す
+// 利用制限などでエラーが発生した場合はエラーメッセージを返す
+// エラーメッセージはmessageのindex=0に設定する
 message TalkResponse {
+  enum TalkResponseStatus {
+    TALK_RESPONSE_STATUS_UNSPECIFIED = 0; // 未定義
+    TALK_RESPONSE_STATUS_SUCCESS = 1; // 成功
+    TALK_RESPONSE_STATUS_ERROR = 2; // エラー
+  }
   repeated string message = 1; // 候補のメッセージ
+  TalkResponseStatus status = 2; // ステータス
 }
 
 message SubmitUserChoiceRequest {
@@ -49,4 +60,29 @@ message SubmitUserChoiceResponse {
     STATUS_OK = 1; // 成功
   }
   Status status = 1; // ステータス
+}
+
+// 購買を行うためのリクエスト
+message SubscribeRequest {
+  enum PlatformType {
+    PLATFORM_UNSPECIFIED = 0; // 未定義
+    PLATFORM_LINE = 1; // LINE
+  }
+  PlatformType platform_type = 1; // プラットフォームの種類
+  string user_id = 2; // ユーザーを一意に識別するID
+}
+
+// 購買を行うためのレスポンス
+// 何かしらのサイトにリダイレクトする場合は、redirect_urlにURLを設定する
+// 例: 購買するためにStripeのページにリダイレクトする場合
+message SubscribeResponse {
+  enum SubscribeStatus {
+    SUBSCRIBE_UNSPECIFIED = 0;       // 未定義
+    SUBSCRIBE_NOT_SUBSCRIBED = 1;      // まだ購読していない状態
+    SUBSCRIBE_PROCESSING = 2;          // 購読処理中
+    SUBSCRIBE_ACTIVE = 3;              // 購読中（処理完了してアクティブ）
+  }
+  SubscribeStatus status = 1; // ステータス
+  string message = 2; // メッセージ
+  string redirect_url = 3; // リダイレクトURL
 }
