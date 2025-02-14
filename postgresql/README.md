@@ -20,6 +20,6 @@ migrate --path postgresql/migrations --database 'postgresql://root:password@loca
 ## データベースを直接見る
 
 ```sh
-docker exec -it alter-ego-postgres-1 bash
+docker exec -it postgresql-postgres-1 bash
 psql -d alterego
 ```

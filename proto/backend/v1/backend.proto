@@ -81,6 +81,7 @@ message SubscribeResponse {
     SUBSCRIBE_NOT_SUBSCRIBED = 1;      // まだ購読していない状態
     SUBSCRIBE_PROCESSING = 2;          // 購読処理中
     SUBSCRIBE_ACTIVE = 3;              // 購読中（処理完了してアクティブ）
+    SUBSCRIBE_INVALID = 4;              // 決済失敗などで購読が無効
   }
   SubscribeStatus status = 1; // ステータス
   string message = 2; // メッセージ
