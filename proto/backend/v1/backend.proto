@@ -6,7 +6,6 @@ option go_package = "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 
 service BackendService {
   rpc Talk(TalkRequest) returns (TalkResponse) {}
-  rpc SubmitUserChoice(SubmitUserChoiceRequest) returns (SubmitUserChoiceResponse) {}
   rpc Subscribe(SubscribeRequest) returns (SubscribeResponse) {}
 }
 
@@ -48,18 +47,6 @@ message TalkResponse {
   }
   repeated string message = 1; // 候補のメッセージ
   TalkResponseStatus status = 2; // ステータス
-}
-
-message SubmitUserChoiceRequest {
-  string choice = 1; // 何番目の選択肢を選んだか (zero-based)
-}
-
-message SubmitUserChoiceResponse {
-  enum Status {
-    STATUS_UNSPECIFIED = 0; // 未定義
-    STATUS_OK = 1; // 成功
-  }
-  Status status = 1; // ステータス
 }
 
 // 購買を行うためのリクエスト
