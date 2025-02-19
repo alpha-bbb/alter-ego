@@ -14,9 +14,6 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: proto  # protoディレクトリ内で実行
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1
