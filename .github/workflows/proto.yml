@@ -1,0 +1,26 @@
+name: Protocol Buffer
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "proto/**"
+      - ".github/workflows/proto.yml"
+
+jobs:
+  buf-lint:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      # Install the `buf` CLI
+      - uses: bufbuild/buf-setup-action@v1
+      # Lint your Protobuf sources
+      - uses: bufbuild/buf-lint-action@v1
+        with:
+          input: proto
