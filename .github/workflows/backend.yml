@@ -17,11 +17,37 @@ defaults:
     working-directory: backend
 
 jobs:
+  generate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proto  # protoディレクトリ内で実行
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Buf CLI
+        run: |
+          curl -sSL https://github.com/bufbuild/buf/releases/download/v1.0.0/buf-Linux-x86_64 -o buf
+          chmod +x buf
+          sudo mv buf /usr/local/bin/buf
+      - name: Run Buf Generate
+        run: buf generate
+      - name: Upload generated code
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-code
+          path: ../backend/gen/
+
   check-vulnerabilities:
+    needs: generate
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
+      - name: Download generated code
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-code
+          path: backend/gen/
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -33,9 +59,15 @@ jobs:
           govulncheck ./...
 
   build:
+    needs: generate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Download generated code
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-code
+          path: backend/gen/
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -47,9 +79,15 @@ jobs:
         run: go build -v ./...
 
   lint:
+    needs: generate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Download generated code
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-code
+          path: backend/gen/
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
