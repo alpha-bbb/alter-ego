@@ -1,10 +1,12 @@
 # alter-ego
-### Alter-rgoは会話に疲れたすべての現代人に捧げる究極のLINEbotです
+
+Alter-rgoは会話に疲れたすべての現代人に捧げる究極のLINEbotです
 
 ![example](https://github.com/user-attachments/assets/90705e09-53ef-41de-a6fa-56bfa93e7081)
 ![solution](https://github.com/user-attachments/assets/dd6b4123-1874-4c8b-8343-63b427df79ed)
 
-### 下記のQRからLINEbotを友達登録して利用してみましょう
+下記のQRからLINEbotを友達登録して利用してみましょう
+
 ![zip_-_Contact](https://github.com/user-attachments/assets/a6c7fe62-db81-4807-aef2-aa3dd0e062e1)
 
 ## ディレクトリ構成
