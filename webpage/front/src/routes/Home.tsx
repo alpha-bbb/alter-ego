@@ -59,9 +59,26 @@ export const Home: FC = () => {
           </p>
         </div>
       </div>
-      <footer className="mt-48 pb-16 lg:mt-64 text-center text-base sm:text-lg">
+      {/* <footer className="mt-48 pb-16 lg:mt-64 text-center text-base sm:text-lg flex justify-center space-x-8">
         <Link to="/tokushoho" className="text-blue-500 hover:underline">
           特定商取引法に基づく表記
+        </Link>
+        <Link to="/terms" className="text-blue-500 hover:underline">
+          利用規約
+        </Link>
+        <Link to="/privacy" className="text-blue-500 hover:underline">
+          プライバシーポリシー
+        </Link>
+      </footer> */}
+      <footer className="mt-48 pb-16 lg:mt-64 text-center text-base sm:text-lg flex flex-col sm:flex-row justify-center sm:space-x-8 space-y-4 sm:space-y-0">
+        <Link to="/tokushoho" className="text-blue-500 hover:underline">
+          特定商取引法に基づく表記
+        </Link>
+        <Link to="/terms" className="text-blue-500 hover:underline">
+          利用規約
+        </Link>
+        <Link to="/privacy" className="text-blue-500 hover:underline">
+          プライバシーポリシー
         </Link>
       </footer>
     </div>
