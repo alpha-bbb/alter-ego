@@ -26,7 +26,7 @@ class AlterEgo:
 
         workflow.set_entry_point("convert_history")
         workflow.add_edge("convert_history", "analyze_action")
-        workflow.add_conditional_edges("convert_history", self._route_after_conversion)
+        workflow.add_edge("convert_history", "analyze_style")
         workflow.add_conditional_edges("analyze_action", self._route_after_analysis)
 
         workflow.add_edge("analyze_style", "generate_template")
@@ -36,14 +36,6 @@ class AlterEgo:
         workflow.add_edge("generate_responses", END)
 
         self.graph = workflow.compile()
-
-    def _route_after_conversion(
-        self, state: GraphState
-    ) -> Literal["analyze_style", "generate_template"]:
-        """会話履歴変換後のルーティング"""
-        if state.talk_histories:
-            return "analyze_style"
-        return "generate_template"
 
     def _route_after_analysis(
         self, state: GraphState

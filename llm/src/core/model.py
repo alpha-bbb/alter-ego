@@ -84,7 +84,7 @@ class TemplateVal(BaseModel):
         # other が dict の場合は TemplateVal に変換する
         if isinstance(other, dict):
             try:
-                other = TemplateVal.parse_obj(other)
+                other = TemplateVal.model_validate(other)
             except Exception as e:
                 raise ValueError(
                     "渡された dict を TemplateVal に変換できませんでした"
@@ -123,6 +123,10 @@ class TemplateVal(BaseModel):
         return self.__add__(other)
 
 
+class LLMResponse(BaseModel):
+    replies: list[str] = Field(title="返答のリスト")
+
+
 class GraphState(BaseModel):
     """グラフの状態を管理するメインのStateクラス"""
 
@@ -133,18 +137,13 @@ class GraphState(BaseModel):
         MarkdownTalkHistories(conversations="", my_histories="", other_histories=""),
         description="会話履歴のmarkdown形式",
     )
-    prompt_template: Annotated[str, operator.add] = Field(
-        "", description="プロンプトテンプレート"
-    )
+    prompt_template: str = Field("", description="プロンプトテンプレート")
     template_val: Annotated[TemplateVal, operator.add] = Field(
         TemplateVal(action_analysis=None, knowledge=None, speaking_style=None),
         description="プロンプトテンプレートの変数",
     )
-    template_ready: bool = Field(
-        False, description="プロンプトテンプレートが完成しているかどうか"
-    )
-    final_responses: list[str] = Field(
-        default_factory=list, description="生成された返答のリスト"
+    final_responses: LLMResponse = Field(
+        default=LLMResponse(replies=[]), description="生成された返答のリスト"
     )
 
     class Config:
