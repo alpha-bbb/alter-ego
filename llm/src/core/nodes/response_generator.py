@@ -1,9 +1,10 @@
 from typing import Any
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.runnables import RunnableConfig
-from langchain_openai import ChatOpenAI
+
 from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 from src.core.model import GraphState
 
@@ -35,9 +36,15 @@ async def generate_responses(
 
         # 各LLMで並行して生成
         tasks = [
-            _generate_single_response(gpt4, template, config),
-            _generate_single_response(claude, template, config),
-            _generate_single_response(gemini, template, config),
+            _generate_single_response(
+                gpt4, template, config, state.talk_histories_markdown.conversations
+            ),
+            _generate_single_response(
+                claude, template, config, state.talk_histories_markdown.conversations
+            ),
+            _generate_single_response(
+                gemini, template, config, state.talk_histories_markdown.conversations
+            ),
         ]
 
         # 並行実行
@@ -53,13 +60,13 @@ async def generate_responses(
 
 
 async def _generate_single_response(
-    llm: Any, template: str, config: RunnableConfig
+    llm: Any, template: str, config: RunnableConfig, conversation: str
 ) -> str:
     """単一のLLMで応答を生成"""
 
     messages = [
         SystemMessage(content=template),
-        HumanMessage(content="会話を終了させる一言を生成してください。"),
+        HumanMessage(content=""),
     ]
 
     response = await llm.ainvoke(messages, config)
