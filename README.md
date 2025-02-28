@@ -2,12 +2,12 @@
 
 Alter-rgoは会話に疲れたすべての現代人に捧げる究極のLINEbotです
 
-![example](./webpage/front/src/assets/example.png)
-![solution](./webpage/front/src/assets/solution.png)
+![example](./webpage/front/src/assets/readme/example.jpg)
+![solution](./webpage/front/src/assets/readme/solution.jpg)
 
 下記のQRからLINEbotを友達登録して利用してみましょう
 
-![zip_-_Contact](./webpage/front/src/assets/how.png)
+![zip_-_Contact](./webpage/front/src/assets/readme/how.png)
 
 ## ディレクトリ構成
 
