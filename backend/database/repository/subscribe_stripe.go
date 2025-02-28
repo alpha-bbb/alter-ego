@@ -39,6 +39,7 @@ func (r *SubscribeStripeRepository) FindByUserID(userID string) (entity.Subscrib
 	err := r.db.Model(&model.SubscribeStripe{}).
 		Preload("User").
 		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		First(&subscribeStripe).
 		Error
 	if err != nil {
@@ -66,6 +67,7 @@ func (r *SubscribeStripeRepository) UpdateStatusBySessionID(sessionID string, st
 	return r.db.
 		Model(&model.SubscribeStripe{}).
 		Where("session_id = ?", sessionID).
+		Order("created_at DESC").
 		Update("status", status.String()).
 		Error
 }

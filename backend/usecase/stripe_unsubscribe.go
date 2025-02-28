@@ -1,10 +1,10 @@
 package usecase
 
 import (
+	"github.com/alpha-bbb/alter-ego/backend/adapter/clock"
 	"github.com/alpha-bbb/alter-ego/backend/adapter/payment"
 	"github.com/alpha-bbb/alter-ego/backend/application/dto"
 	"github.com/alpha-bbb/alter-ego/backend/database/repository"
-	"github.com/alpha-bbb/alter-ego/backend/entity"
 )
 
 type IStripeUnsubscribeUseCase interface {
@@ -12,17 +12,20 @@ type IStripeUnsubscribeUseCase interface {
 }
 
 type StripeUnsubscribeUseCase struct {
+	clock                     clock.IClock
 	subscribeStripeRepository repository.ISubscribeStripeRepository
 	userRepository            repository.IUserRepository
 	stripeDriver              payment.IStripeDriver
 }
 
 func NewStripeUnsubscribeUseCase(
+	clock clock.IClock,
 	subscribeStripeRepository repository.ISubscribeStripeRepository,
 	userRepository repository.IUserRepository,
 	stripeDriver payment.IStripeDriver,
 ) IStripeUnsubscribeUseCase {
 	return &StripeUnsubscribeUseCase{
+		clock:                     clock,
 		subscribeStripeRepository: subscribeStripeRepository,
 		userRepository:            userRepository,
 		stripeDriver:              stripeDriver,
@@ -38,22 +41,24 @@ func (u *StripeUnsubscribeUseCase) Execute(account dto.Account) (dto.SubscribeIn
 	if err != nil {
 		return dto.SubscribeInfo{}, err
 	}
-	err = u.stripeDriver.CancelSubscription(subscribeStripe.SessionID)
+	now := u.clock.Now().Unix()
+	subscribeStatus, CurrentPeriodEnd, status, err := u.stripeDriver.GetSubscriptionStatus(subscribeStripe.SessionID, now)
 	if err != nil {
 		return dto.SubscribeInfo{}, err
 	}
 
 	err = u.subscribeStripeRepository.UpdateStatusBySessionID(
 		subscribeStripe.SessionID,
-		entity.SubscribeStatusNotSubscribed,
+		subscribeStatus,
 	)
 	if err != nil {
 		return dto.SubscribeInfo{}, err
 	}
 
 	return dto.SubscribeInfo{
-		Status:      entity.SubscribeStatusNotSubscribed,
-		Message:     "",
+		Status:      subscribeStatus,
+		Message:     status,
 		RedirectUrl: "",
+		ExpiresAt:   CurrentPeriodEnd,
 	}, nil
 }

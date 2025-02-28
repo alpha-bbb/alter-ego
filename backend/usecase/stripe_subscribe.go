@@ -207,7 +207,7 @@ func (u *StripeSubscribeUseCase) updateSubscribeStatus(userID string) error {
 		return fmt.Errorf("failed to find subscribe stripe: %w", err)
 	}
 	now := u.clock.Now().Unix()
-	subscribeStatus, _, err := u.stripeDriver.GetSubscriptionStatus(subscribeStripe.SessionID, now)
+	subscribeStatus, _, _, err := u.stripeDriver.GetSubscriptionStatus(subscribeStripe.SessionID, now)
 	if err != nil {
 		return fmt.Errorf("failed to get subscription status: %w", err)
 	}

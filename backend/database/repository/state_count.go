@@ -43,8 +43,9 @@ func (r *StateCountRepository) CreateInTx(tx any, entity entity.StateCount) erro
 func (r *StateCountRepository) FindByUserID(userID string) (entity.StateCount, error) {
 	var stateCount model.StateCount
 	if err := r.db.Model(&model.StateCount{}).
-		Where("user_id", userID).
 		Preload("User").
+		Where("user_id", userID).
+		Order("updated_at DESC").
 		First(&stateCount).
 		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -63,6 +64,7 @@ func (r *StateCountRepository) IncrementCountInTx(tx any, userID string) error {
 
 	if err := txAsserted.Model(&model.StateCount{}).
 		Where("user_id", userID).
+		Order("updated_at DESC").
 		Update("count", gorm.Expr("count + ?", 1)).
 		Error; err != nil {
 		return fmt.Errorf("failed to increment count: %w", err)

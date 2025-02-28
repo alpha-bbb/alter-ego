@@ -19,6 +19,7 @@ func (h *HealthCheckHandler) Execute(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("Health check handler")
 
 	logger.Info("Health check requested")
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})

@@ -30,6 +30,7 @@ func NewStripeWebhookHandler(
 
 func (h *StripeWebhookHandler) Execute(c echo.Context) error {
 	logger, err := log.NewLogger()
+	logger.Info("Stripe webhook handler")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create logger"})
 	}

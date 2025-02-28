@@ -23,11 +23,12 @@ func NewUserAggregateRepository(db *gorm.DB) IUserAggregateRepository {
 func (r *userAggregateRepository) FindByUserID(userID string) (entity.UserAggregate, error) {
 	var userModel model.User
 	err := r.db.
-		Where("user_id = ?", userID).
 		Preload("Detail").
 		Preload("AccountLine").
 		Preload("SubscribeStripe").
 		Preload("StateCount").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		First(&userModel).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

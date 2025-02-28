@@ -39,8 +39,9 @@ func (r *UserDetailRepository) CreateInTx(tx any, entity entity.UserDetail) erro
 func (r *UserDetailRepository) FindByUserID(userID string) (entity.UserDetail, error) {
 	var userDetail model.UserDetail
 	err := r.db.Model(&model.UserDetail{}).
-		Where("user_id = ?", userID).
 		Preload("User").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		First(&userDetail).
 		Error
 	if err != nil {

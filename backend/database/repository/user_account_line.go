@@ -40,8 +40,9 @@ func (r *UserAccountLineRepository) CreateInTx(tx any, entity entity.UserAccount
 func (r *UserAccountLineRepository) FindByUserID(userID string) (entity.UserAccountLine, error) {
 	var userAccountLine model.UserAccountLine
 	err := r.db.Model(&model.UserAccountLine{}).
-		Where("user_id = ?", userID).
 		Preload("User").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		First(&userAccountLine).
 		Error
 	if err != nil {

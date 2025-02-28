@@ -13,7 +13,7 @@ import (
 
 type IStripeDriver interface {
 	CreateSubscriptionSession(dto dto.Subscribe) (string, string, error)
-	GetSubscriptionStatus(sessionID string, now int64) (entity.SubscribeStatus, int64, error)
+	GetSubscriptionStatus(sessionID string, now int64) (entity.SubscribeStatus, int64, string, error)
 	CancelSubscription(sessionID string) error
 }
 
@@ -58,22 +58,22 @@ func (s *StripeDriver) CreateSubscriptionSession(dto dto.Subscribe) (string, str
 	return sess.URL, sess.ID, nil
 }
 
-func (s *StripeDriver) GetSubscriptionStatus(sessionID string, now int64) (entity.SubscribeStatus, int64, error) {
+func (s *StripeDriver) GetSubscriptionStatus(sessionID string, now int64) (entity.SubscribeStatus, int64, string, error) {
 	logger, _ := log.NewLogger()
 	sess, err := session.Get(sessionID, nil)
 	if err != nil {
 		logger.Info(fmt.Sprintf("session.Get error: %v", err))
-		return entity.SubscribeStatusUnspecified, 0, fmt.Errorf("failed to retrieve session: %w", err)
+		return entity.SubscribeStatusUnspecified, 0, "", fmt.Errorf("failed to retrieve session: %w", err)
 	}
 
 	if sess.Subscription == nil {
 		logger.Info(fmt.Sprintf("no subscription found in session: %+v", sess))
-		return entity.SubscribeStatusUnspecified, 0, nil
+		return entity.SubscribeStatusUnspecified, 0, "", nil
 	}
 	subscriptionID := sess.Subscription.ID
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
-		return entity.SubscribeStatusUnspecified, 0, fmt.Errorf("failed to retrieve subscription details: %w", err)
+		return entity.SubscribeStatusUnspecified, 0, "", fmt.Errorf("failed to retrieve subscription details: %w", err)
 	}
 	currentPeriodEnd := sub.CurrentPeriodEnd
 
@@ -85,7 +85,7 @@ func (s *StripeDriver) GetSubscriptionStatus(sessionID string, now int64) (entit
 	} else {
 		status = entity.SubscribeStatusActive
 	}
-	return status, currentPeriodEnd, nil
+	return status, currentPeriodEnd, string(sub.Status), nil
 }
 
 func (s *StripeDriver) CancelSubscription(sessionID string) error {

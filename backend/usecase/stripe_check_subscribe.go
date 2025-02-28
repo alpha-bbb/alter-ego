@@ -42,7 +42,7 @@ func (u *StripeCheckSubscribeUseCase) Execute(account dto.Account) (dto.Subscrib
 		return dto.SubscribeInfo{}, err
 	}
 	now := u.clock.Now().Unix()
-	subscribeStatus, currentPeriodEnd, err := u.stripeDriver.GetSubscriptionStatus(subscribeStripe.SessionID, now)
+	subscribeStatus, currentPeriodEnd, status, err := u.stripeDriver.GetSubscriptionStatus(subscribeStripe.SessionID, now)
 	if err != nil {
 		return dto.SubscribeInfo{}, err
 	}
@@ -57,7 +57,7 @@ func (u *StripeCheckSubscribeUseCase) Execute(account dto.Account) (dto.Subscrib
 
 	return dto.SubscribeInfo{
 		Status:      subscribeStatus,
-		Message:     "",
+		Message:     status,
 		RedirectUrl: "",
 		ExpiresAt:   currentPeriodEnd,
 	}, err

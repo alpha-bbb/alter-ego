@@ -76,6 +76,7 @@ func NewGRPCServer(logger *zap.Logger) (*grpc.Server, net.Listener, error) {
 		stripeDriver,
 	)
 	stripeUnsubscribeUseCase := usecase.NewStripeUnsubscribeUseCase(
+		clock,
 		subscribeStripeRepository,
 		userRepository,
 		stripeDriver,

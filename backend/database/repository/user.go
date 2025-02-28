@@ -39,6 +39,7 @@ func (r *UserRepository) FindByID(userID string) (entity.User, error) {
 	var user model.User
 	err := r.db.Model(&model.User{}).
 		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -56,6 +57,7 @@ func (r *UserRepository) FindByAccount(platform, accountID string) (entity.User,
 	err := r.db.Model(&model.User{}).
 		Joins("JOIN user_account_lines ON user_account_lines.user_id = users.user_id").
 		Where("user_account_lines.line_id = ?", accountID).
+		Order("user_account_lines.created_at DESC").
 		First(&user).
 		Error
 	if err != nil {

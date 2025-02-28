@@ -36,6 +36,7 @@ func NewBackendServiceServer(
 
 func (h *TalkHandler) Talk(ctx context.Context, req *backendpb.TalkRequest) (*backendpb.TalkResponse, error) {
 	logger, _ := log.NewLogger()
+	logger.Info("Talk handler")
 	var res dto.Message
 	histories, err := converter.TalkHistoriesFromGRPC(req)
 	if err != nil {
@@ -64,6 +65,7 @@ func (h *TalkHandler) Talk(ctx context.Context, req *backendpb.TalkRequest) (*ba
 
 func (h *TalkHandler) Subscribe(ctx context.Context, req *backendpb.SubscribeRequest) (*backendpb.SubscribeResponse, error) {
 	logger, _ := log.NewLogger()
+	logger.Info("Subscribe handler")
 	var res dto.SubscribeInfo
 	subEntity, err := converter.FromGRPCSubscribeRequest(req)
 	if err != nil {

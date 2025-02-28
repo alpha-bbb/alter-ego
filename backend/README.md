@@ -39,5 +39,5 @@ stripe listen --forward-to localhost:50080/stripe/webhook
 ## cmd
 
 ```sh
-docker exec -it alter-ego-backend-1 sh -c "cd /app/backend/cmd/clearstatecount && go run main.go"
+cd backend/cmd/clearstatecount && go run main.go
 ```
