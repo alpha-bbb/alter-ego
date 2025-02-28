@@ -23,10 +23,12 @@ func NewLLMGRPCClient(address string) ILLMClient {
 	if err != nil {
 		logger.Fatal("failed to create logger", zap.Error(err))
 	}
-	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Fatal("failed to connect to LLM server", zap.Error(err))
 	}
+
 	return &grpcLLMClient{
 		client: llmpb.NewLlmServiceClient(conn),
 	}

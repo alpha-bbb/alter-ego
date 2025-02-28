@@ -2,12 +2,9 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/alpha-bbb/alter-ego/backend/database/model"
 	"github.com/alpha-bbb/alter-ego/backend/entity"
-	"github.com/alpha-bbb/alter-ego/backend/infrastructure/log"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -54,8 +51,6 @@ func (r *SubscribeStripeRepository) FindByUserID(userID string) (entity.Subscrib
 }
 
 func (r *SubscribeStripeRepository) Update(entity entity.SubscribeStripe) error {
-	logger, _ := log.NewLogger()
-	logger.Info(fmt.Sprintf("update subscribe stripe: %+v", entity), zap.String("method", "SubscribeStripeRepository.Update"))
 	model := &model.SubscribeStripe{
 		SubscribeStripeID: entity.SubscribeStripeID,
 		UserID:            entity.User.UserID,
