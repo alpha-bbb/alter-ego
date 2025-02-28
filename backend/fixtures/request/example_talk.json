@@ -1,0 +1,18 @@
+{
+  "histories": [
+    {
+      "date": "2024-12-07",
+      "user": {
+        "user_id": "123",
+        "name": "太郎",
+        "role": 2
+      },
+      "message": "今度ご飯にいきませんか？"
+    }
+  ],
+  "action_kind": 1,
+  "account": {
+    "platform_type": 1,
+    "account_id": "line_user_id_001"
+  }
+}

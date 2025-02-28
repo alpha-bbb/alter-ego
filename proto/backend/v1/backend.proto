@@ -16,6 +16,7 @@ message TalkRequest {
   }
   repeated TalkHistory histories = 1; // 発言履歴
   ActionKind action_kind = 2; // アクションの種類
+  Account account = 3; // アカウント情報
 }
 
 message TalkHistory {
@@ -44,33 +45,46 @@ message TalkResponse {
     TALK_RESPONSE_STATUS_UNSPECIFIED = 0; // 未定義
     TALK_RESPONSE_STATUS_SUCCESS = 1; // 成功
     TALK_RESPONSE_STATUS_ERROR = 2; // エラー
+    TALK_RESPONSE_STATUS_LIMIT = 3; // 回数利用制限
   }
   repeated string message = 1; // 候補のメッセージ
   TalkResponseStatus status = 2; // ステータス
 }
 
-// 購買を行うためのリクエスト
-message SubscribeRequest {
+// アカウント情報
+message Account {
   enum PlatformType {
     PLATFORM_UNSPECIFIED = 0; // 未定義
     PLATFORM_LINE = 1; // LINE
   }
   PlatformType platform_type = 1; // プラットフォームの種類
-  string user_id = 2; // ユーザーを一意に識別するID
+  string account_id = 2; // アカウントを一意に識別するID
 }
 
-// 購買を行うためのレスポンス
+// サブスクを行うためのリクエスト
+message SubscribeRequest {
+  enum SubscribeAction {
+    SUBSCRIBE_ACTION_UNSPECIFIED = 0; // 未定義
+    SUBSCRIBE_ACTION_START = 1; // サブスク開始
+    SUBSCRIBE_ACTION_CANCEL = 2; // サブスクキャンセル
+    SUBSCRIBE_ACTION_CHECK = 3; // サブスクチェック
+  }
+  Account account = 1;
+  SubscribeAction action = 2;
+}
+
+// サブスクを行うためのレスポンス
 // 何かしらのサイトにリダイレクトする場合は、redirect_urlにURLを設定する
-// 例: 購買するためにStripeのページにリダイレクトする場合
+// 例: サブスクするためにStripeのページにリダイレクトする場合
 message SubscribeResponse {
   enum SubscribeStatus {
     SUBSCRIBE_UNSPECIFIED = 0;       // 未定義
-    SUBSCRIBE_NOT_SUBSCRIBED = 1;      // まだ購読していない状態
-    SUBSCRIBE_PROCESSING = 2;          // 購読処理中
-    SUBSCRIBE_ACTIVE = 3;              // 購読中（処理完了してアクティブ）
-    SUBSCRIBE_INVALID = 4;              // 決済失敗などで購読が無効
+    SUBSCRIBE_NOT_SUBSCRIBED = 1;      // サブスクしていない状態
+    SUBSCRIBE_PROCESSING = 2;          // サブスク処理中
+    SUBSCRIBE_ACTIVE = 3;              // サブスク中
   }
   SubscribeStatus status = 1; // ステータス
   string message = 2; // メッセージ
   string redirect_url = 3; // リダイレクトURL
+  int64 expire_at = 4; // サブスクの有効期限 (Unix Time)
 }

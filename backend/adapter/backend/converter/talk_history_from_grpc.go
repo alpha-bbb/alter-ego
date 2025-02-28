@@ -1,26 +1,34 @@
 package converter
 
 import (
-	"github.com/alpha-bbb/alter-ego/backend/entity"
+	"github.com/alpha-bbb/alter-ego/backend/application/dto"
 	backendpb "github.com/alpha-bbb/alter-ego/backend/gen/grpc/backend/v1"
 )
 
-func ConvertTalkHistoryFromGRPCTalkRequest(req *backendpb.TalkRequest) []entity.TalkHistory {
-	if req == nil || req.Histories == nil {
-		return nil
+func TalkHistoriesFromGRPC(req *backendpb.TalkRequest) (dto.Talk, error) {
+	if req == nil ||
+		req.Histories == nil ||
+		req.Account == nil {
+		return dto.Talk{}, ErrInvalidRequest
 	}
 
-	result := make([]entity.TalkHistory, len(req.Histories))
-	for i := range req.Histories {
-		result[i] = entity.TalkHistory{
-			Date: req.Histories[i].Date,
-			User: entity.User{
-				UserID: req.Histories[i].User.UserId,
-				Name:   req.Histories[i].User.Name,
-				Role:   int(req.Histories[i].User.Role),
+	histories := make([]dto.TalkHistory, len(req.Histories))
+	for i, history := range req.Histories {
+		histories[i] = dto.TalkHistory{
+			Date: history.Date,
+			User: dto.User{
+				UserID: history.User.UserId,
+				Name:   history.User.Name,
+				Role:   int(history.User.Role),
 			},
-			Message: req.Histories[i].Message,
+			Message: history.Message,
 		}
 	}
-	return result
+	return dto.Talk{
+		Histories: histories,
+		Account: dto.Account{
+			PlatformType: dto.PlatformType(req.Account.PlatformType),
+			AccountID:    req.Account.AccountId,
+		},
+	}, nil
 }

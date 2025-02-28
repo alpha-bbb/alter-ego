@@ -1,6 +1,7 @@
 import { config } from "@/config.js";
 import { imageToTalkHistories } from "@/functions/image_to_talk_histories.js";
 import {
+  Account_PlatformType,
   BackendService,
   type TalkHistory,
   TalkRequestSchema,
@@ -28,18 +29,39 @@ export const BackendClient = createClient(BackendService, transport);
 
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
-): Promise<{ messages: string[] } | null> {
+  accountId: string,
+): Promise<{ messages: string[]; status: string } | null> {
   try {
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
       actionKind: 1,
+      account: {
+        platformType: Account_PlatformType.PLATFORM_LINE,
+        accountId: accountId,
+      },
     });
 
     const response = await BackendClient.talk(request);
     console.log("Response:", response);
     console.log("Response:", response.message);
+    let status = "error";
+    switch (response.status) {
+      case 1:
+        status = "success";
+        break;
+      case 2:
+        status = "error";
+        break;
+      case 3:
+        status = "limit";
+        break;
+      default:
+        status = "error";
+        break;
+    }
     return {
       messages: response.message,
+      status: status,
     };
   } catch (error) {
     console.error("Error:", error);
@@ -281,12 +303,38 @@ export const webhookHandler = async (
         }
 
         let message: string[] = [];
+        let status = "error";
         if (talkHistories === null) {
           return;
         }
-        const talkResponse = await sendTalkRequest(talkHistories);
+        const talkResponse = await sendTalkRequest(talkHistories, userId);
         if (talkResponse) {
           message = talkResponse.messages;
+          status = talkResponse.status;
+        }
+        if (status === "limit") {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "無料ユーザーは1日3回まで使用できます。",
+              },
+            ],
+          });
+          return;
+        }
+        if (status === "error") {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "エラーが発生しました。もう一度やり直してください",
+              },
+            ],
+          });
+          return;
         }
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         const messages: any[] = [];
