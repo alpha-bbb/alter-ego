@@ -1,7 +1,9 @@
 package entity
 
+import "time"
+
 type User struct {
-	UserID string // ユーザーを一意に識別するID
-	Name   string // ユーザー名
-	Role   int    // ユーザーの種類
+	UserID    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

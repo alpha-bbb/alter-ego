@@ -1,17 +1,18 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ./backend
     ports:
       - "50051:50051"
+      - "50080:50080"
     env_file:
       - ./backend/.env
     volumes:
       - /var/log/alter-ego:/var/log/alter-ego
     networks:
       - app_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   line-backend:
     build:
@@ -22,6 +23,8 @@ services:
       - "3000:3000"
     networks:
       - app_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   llm:
     build:
@@ -32,6 +35,8 @@ services:
       - "50052:50052"
     networks:
       - app_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   app_network:
