@@ -1,3 +1,17 @@
+# 開発環境用ステージ
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim as dev
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+ENV UV_PYTHON_DOWNLOADS=0
+
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen
+
+ADD . /app
+RUN --mount=type=cache,target=/root/.cache/uv
+
 # ビルド用ステージ
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
@@ -12,9 +26,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-
-# 開発環境用ステージ
-FROM builder AS dev
 
 # 本番用ステージ
 FROM python:3.12-slim-bookworm AS prod

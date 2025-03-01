@@ -18,10 +18,14 @@ services:
     build:
       target: dev
     volumes:
-      - ./llm/src:/app/src
+      - ./llm:/app
+      - venv_data:/app/.venv
     ports:
       - "50052:50052"
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     command: uv run watchdog_runner.py
+
+volumes:
+  venv_data:
