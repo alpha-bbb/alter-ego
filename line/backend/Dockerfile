@@ -20,7 +20,7 @@ COPY . ./
 RUN yarn run build
 
 # ランタイム用ステージ
-FROM node:22-alpine
+FROM node:22-alpine as prod
 
 WORKDIR /app
 
