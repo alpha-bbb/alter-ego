@@ -21,7 +21,7 @@ COPY . .
 RUN go build -o app ./main.go
 
 # ランタイム用ステージ
-FROM alpine:latest
+FROM alpine:latest as prod
 
 WORKDIR /app
 

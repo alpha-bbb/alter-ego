@@ -2,6 +2,7 @@ services:
   backend:
     build:
       context: ./backend
+      target: prod
     ports:
       - "50051:50051"
       - "50080:50080"
@@ -17,6 +18,7 @@ services:
   line-backend:
     build:
       context: ./line/backend
+      target: prod
     env_file:
       - ./line/backend/.env
     ports:
@@ -29,6 +31,7 @@ services:
   llm:
     build:
       context: ./llm
+      target: prod
     env_file:
       - ./llm/.env
     ports:

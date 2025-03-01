@@ -1,16 +1,12 @@
 from typing import Any
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.runnables import RunnableConfig
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from src.core.model import GraphState
+from src.core.model import GraphState, LLMResponse
 
 
 async def generate_responses(
     state: GraphState,
-    config: RunnableConfig,
 ) -> dict[str, Any]:
     """
     複数のLLMを使用して返答を生成するノード
@@ -24,43 +20,17 @@ async def generate_responses(
     """
     try:
         # LLMsの初期化
-        gpt4 = ChatOpenAI(model="gpt-4o-mini")
-        claude = ChatAnthropic(
-            model_name="claude-3-5-sonnet-20240620", timeout=60, stop=["Human:"]
+        gemini = ChatGoogleGenerativeAI(model="gemini-1.5-pro").with_structured_output(
+            LLMResponse
         )
-        gemini = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
 
         # プロンプトテンプレートの作成
         template = state.prompt_template
 
-        # 各LLMで並行して生成
-        tasks = [
-            _generate_single_response(gpt4, template, config),
-            _generate_single_response(claude, template, config),
-            _generate_single_response(gemini, template, config),
-        ]
+        response = gemini.invoke(template)
 
-        # 並行実行
-        import asyncio
-
-        response = await asyncio.gather(*tasks)
-
-        return {"final_responses": response}
+        return {"final_responses": response.model_dump()}
 
     except Exception as e:
         print(f"Error in generate_responses: {str(e)}")
         return {"error": str(e)}
-
-
-async def _generate_single_response(
-    llm: Any, template: str, config: RunnableConfig
-) -> str:
-    """単一のLLMで応答を生成"""
-
-    messages = [
-        SystemMessage(content=template),
-        HumanMessage(content="会話を終了させる一言を生成してください。"),
-    ]
-
-    response = await llm.ainvoke(messages, config)
-    return response.content
