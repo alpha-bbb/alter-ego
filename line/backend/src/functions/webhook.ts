@@ -317,23 +317,6 @@ export const webhookHandler = async (
               }
               return;
             default:
-              await client.replyMessage({
-                replyToken: e.replyToken,
-                messages: [
-                  {
-                    type: "text",
-                    text:
-                      "ヘルプメッセージ\n" +
-                      "無料ユーザーは1日3回まで使用できます。\n" +
-                      "サブスクは月額1000円です。\n" +
-                      "\n" +
-                      "コマンド\n" +
-                      "subscribe: サブスクリプションを購入します。\n" +
-                      "unsubscribe: サブスクリプションを解約します。\n" +
-                      "check: サブスクリプションの状態を確認します。\n",
-                  },
-                ],
-              });
               break;
           }
         }
