@@ -13,23 +13,23 @@ it("トーク履歴が正しくparseされるか (日本語)", () => {
   expect(res).toEqual([
     {
       $typeName: "backend.v1.TalkHistory",
-      date: "2025-01-12T00:33:00+0900",
+      date: "2025-01-12T00:33:00+09:00",
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "こんにちは！",
     },
     {
       $typeName: "backend.v1.TalkHistory",
-      date: "2025-01-12T00:34:00+0900",
+      date: "2025-01-12T00:34:00+09:00",
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "元気？",
     },
@@ -48,23 +48,23 @@ Sun, 1/12/2025
   expect(res).toEqual([
     {
       $typeName: "backend.v1.TalkHistory",
-      date: "2025-01-12T00:33:00+0900",
+      date: "2025-01-12T00:33:00+09:00",
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "こんにちは！",
     },
     {
       $typeName: "backend.v1.TalkHistory",
-      date: "2025-01-12T00:34:00+0900",
+      date: "2025-01-12T00:34:00+09:00",
       user: {
         $typeName: "backend.v1.User",
         name: "太郎",
-        userId: "太郎01",
-        role: 1,
+        userId: "太郎02",
+        role: 2,
       },
       message: "元気？",
     },

@@ -1,7 +1,9 @@
+import { sendSubscribeRequest } from "@/adapter/backend/subscribe.js";
 import { config } from "@/config.js";
+import { imageToTalkHistories } from "@/functions/image_to_talk_histories.js";
 import {
+  Account_PlatformType,
   BackendService,
-  SubmitUserChoiceRequestSchema,
   type TalkHistory,
   TalkRequestSchema,
   User_UserRole,
@@ -23,40 +25,45 @@ const client = new MessagingApiClient(config.line.messagingApiClient);
 const transport = createGrpcTransport({
   baseUrl: config.backend.url,
 });
-console.log("transport:", transport);
 export const BackendClient = createClient(BackendService, transport);
 
 async function sendTalkRequest(
   talkHistories: TalkHistory[],
-): Promise<string[]> {
+  accountId: string,
+): Promise<{ messages: string[]; status: string } | null> {
   try {
     const request = create(TalkRequestSchema, {
       histories: talkHistories,
       actionKind: 1,
+      account: {
+        platformType: Account_PlatformType.PLATFORM_LINE,
+        accountId: accountId,
+      },
     });
 
     const response = await BackendClient.talk(request);
-    console.log("Response:", response.message);
-    return response.message;
+    let status = "error";
+    switch (response.status) {
+      case 1:
+        status = "success";
+        break;
+      case 2:
+        status = "error";
+        break;
+      case 3:
+        status = "limit";
+        break;
+      default:
+        status = "error";
+        break;
+    }
+    return {
+      messages: response.message,
+      status: status,
+    };
   } catch (error) {
     console.error("Error:", error);
-    return [];
-  }
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-async function sendQuestionnaire(messageNumber: string): Promise<any> {
-  try {
-    const request = create(SubmitUserChoiceRequestSchema, {
-      choice: messageNumber,
-    });
-
-    const response = await BackendClient.submitUserChoice(request);
-    console.log("Response:", response);
-    return response;
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
+    return null;
   }
 }
 
@@ -116,8 +123,7 @@ export function parseTalkHistories(
     if (messageMatch && talkDate) {
       const [_, hour, minutes, userName, message] = messageMatch;
       const time = `${hour.padStart(2, "0")}:${minutes}`;
-      console.log("name:", userName);
-      const dateTime = `${talkDate}T${time}:00+0900`; // ISO 8601形式
+      const dateTime = `${talkDate}T${time}:00+09:00`; // ISO 8601形式
 
       const name = userName || "Unknown";
       const userId =
@@ -154,6 +160,30 @@ export function parseTalkHistories(
   return TalkHistories;
 }
 
+/**
+ * チャットにローディングアニメーションを表示する
+ *
+ * @param chatId
+ */
+async function loading_animation(chatId: string): Promise<void> {
+  const endpoint = "https://api.line.me/v2/bot/chat/loading/start";
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chatId: chatId,
+      loadingSeconds: 60,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch content: ${response.statusText}`);
+  }
+}
+
 export const webhookHandler = async (
   req: Request,
   res: Response,
@@ -162,34 +192,194 @@ export const webhookHandler = async (
     if (req.body.events && req.body.events.length > 0) {
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
       const eventPromises = req.body.events.map(async (e: any) => {
-        let selfName = "noName";
-        if (e.source?.userId) {
-          const userId = e.source.userId;
+        console.log("invoking");
+        if (e.source?.userId == null) {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "エラーが発生しました。もう一度やり直してください",
+              },
+            ],
+          });
+          console.error("ユーザーIDが取得できませんでした。");
+          return;
+        }
+        // LINEユーザーのプロフィールを取得
+        const profile = await client.getProfile(e.source.userId);
+        const selfName = profile.displayName;
+        const userId = profile.userId;
 
-          // LINEユーザーのプロフィールを取得
-          const profile = await client.getProfile(userId);
+        let talkHistories: TalkHistory[] | null = null;
 
-          console.log("ユーザー名:", profile.displayName);
-          console.log("ユーザーID:", profile.userId);
-          selfName = profile.displayName;
+        if (e.type === "message" && e.message.type === "text") {
+          loading_animation(userId);
+          switch (e.message.text) {
+            case "subscribe":
+              {
+                const res = await sendSubscribeRequest(userId, 1);
+                if (res?.status === "ACTIVE") {
+                  const expired_date = new Date(
+                    res.expire_at * 1000,
+                  ).toLocaleDateString();
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: `サブスク中です。\n有効期限: ${expired_date}`,
+                      },
+                    ],
+                  });
+                } else {
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: `こちらからサブスクリプションを購入できます。\n${res?.redirect_url}`,
+                      },
+                    ],
+                  });
+                }
+              }
+              return;
+
+            case "unsubscribe":
+              {
+                const res = await sendSubscribeRequest(userId, 2);
+                if (res === null) {
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: "エラーが発生しました。もう一度やり直してください",
+                      },
+                    ],
+                  });
+                  return;
+                }
+
+                if (res?.status === "UNSPECIFIED") {
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: "サブスクリプションはありません。",
+                      },
+                    ],
+                  });
+                }
+                const expired_date = new Date(
+                  res.expire_at * 1000,
+                ).toLocaleDateString();
+                await client.replyMessage({
+                  replyToken: e.replyToken,
+                  messages: [
+                    {
+                      type: "text",
+                      text: `状態: ${res?.messages}\n有効期限: ${expired_date}`,
+                    },
+                  ],
+                });
+              }
+              return;
+            case "check":
+              {
+                const res = await sendSubscribeRequest(userId, 3);
+                if (res?.status === "ACTIVE") {
+                  const expired_date = new Date(
+                    res.expire_at * 1000,
+                  ).toLocaleDateString();
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: `サブスク中です。\n有効期限: ${expired_date}`,
+                      },
+                    ],
+                  });
+                } else {
+                  await client.replyMessage({
+                    replyToken: e.replyToken,
+                    messages: [
+                      {
+                        type: "text",
+                        text: "サブスク中ではありません。",
+                      },
+                    ],
+                  });
+                }
+              }
+              return;
+            default:
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
+                  {
+                    type: "text",
+                    text:
+                      "ヘルプメッセージ\n" +
+                      "無料ユーザーは1日3回まで使用できます。\n" +
+                      "サブスクは月額1000円です。\n" +
+                      "\n" +
+                      "コマンド\n" +
+                      "subscribe: サブスクリプションを購入します。\n" +
+                      "unsubscribe: サブスクリプションを解約します。\n" +
+                      "check: サブスクリプションの状態を確認します。\n",
+                  },
+                ],
+              });
+              break;
+          }
         }
 
-        if (e.type === "postback") {
-          console.log("Postback data:", e.postback.data);
-          const messageNumber = e.postback.data;
+        // 画像メッセージの場合（例: LINEの画像メッセージは type が "image"）
+        if (e.type === "message" && e.message.type === "image") {
+          try {
+            loading_animation(userId);
+            const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
+            const response = await fetch(endpoint, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${config.line.messagingApiClient.channelAccessToken}`,
+              },
+            });
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image content: ${response.statusText}`,
+              );
+            }
+            // 画像のバイナリデータを ArrayBuffer として取得
+            const buffer = await response.arrayBuffer();
+            // OCR を実施して TalkHistory 配列を取得する
+            talkHistories = await imageToTalkHistories(buffer);
 
-          await sendQuestionnaire(messageNumber);
-          console.log("Questionnaire sent");
+            if (talkHistories == null) {
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
+                  {
+                    type: "text",
+                    text: "エラーが発生しました。もう一度やり直してください",
+                  },
+                ],
+              });
+              return;
+            }
+          } catch (err) {
+            console.error("画像処理エラー:", err);
+          }
         }
 
         if (e.type === "message" && e.message.type === "file") {
-          console.log("res:", e);
           try {
+            loading_animation(userId);
             const endpoint = `https://api-data.line.me/v2/bot/message/${e.message.id}/content`;
-            console.log(
-              "env token",
-              config.line.messagingApiClient.channelAccessToken,
-            );
             const response = await fetch(endpoint, {
               method: "GET",
               headers: {
@@ -202,137 +392,116 @@ export const webhookHandler = async (
               );
             }
             const buffer = await response.arrayBuffer();
-            console.log("fileRes:", response);
 
             const decoder = new TextDecoder("utf-8");
             const talk = decoder.decode(buffer);
-            console.log("file contents:", talk);
             // TODO: こちらに関して、多言語に対応する必要がある
 
-            const TalkHistories = parseTalkHistories(talk, selfName);
-            console.log("TalkHistories:", TalkHistories);
-            let message: string[] = [];
-            if (TalkHistories) {
-              message = await sendTalkRequest(TalkHistories);
-            }
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const messages: any[] = [];
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const choices: any[] = [];
-            for (let i = 0; i < message.length; i++) {
-              const index = i;
-              choices.push({
-                type: "text",
-                text: `${index + 1}: ${message[i]}`,
-              });
-              messages.push({
-                type: "text",
-                text: message[i],
-              });
-            }
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateMessage: any = {
-              type: "template",
-              altText: "This is a buttons template",
-              template: {
-                type: "buttons",
-                imageAspectRatio: "rectangle",
-                imageSize: "cover",
-                title: "Suggested messages",
-                text: "Which message do you want to copy?",
-                actions: [
+            talkHistories = parseTalkHistories(talk, selfName);
+
+            if (talkHistories == null) {
+              await client.replyMessage({
+                replyToken: e.replyToken,
+                messages: [
                   {
-                    type: "clipboard",
-                    label: "1",
-                    clipboardText: messages[0].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "2",
-                    clipboardText: messages[1].text,
-                  },
-                  {
-                    type: "clipboard",
-                    label: "3",
-                    clipboardText: messages[2].text,
+                    type: "text",
+                    text: "エラーが発生しました。もう一度やり直してください",
                   },
                 ],
-              },
-            };
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            const buttonTemplateQuestionnaire: any = {
-              type: "flex",
-              altText: "どのメッセージがよかったですか？",
-              contents: {
-                type: "bubble",
-                body: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "どのメッセージがよかったですか？",
-                      wrap: true,
-                      weight: "regular",
-                      size: "md",
-                      color: "#222222",
-                      margin: "none",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-                footer: {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "1",
-                        data: "1",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "2",
-                        data: "2",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                    {
-                      type: "button",
-                      style: "primary",
-                      action: {
-                        type: "postback",
-                        label: "3",
-                        data: "3",
-                      },
-                      color: "#0E71EB",
-                      height: "sm",
-                    },
-                  ],
-                  spacing: "sm",
-                },
-              },
-            };
-            choices.push(buttonTemplateMessage);
-            choices.push(buttonTemplateQuestionnaire);
-            await client.replyMessage({
-              replyToken: e.replyToken,
-              messages: choices,
-            });
+              });
+              return;
+            }
           } catch (e) {
-            console.log("Error", e);
+            console.error("Error:", e);
           }
         }
+
+        let message: string[] = [];
+        let status = "error";
+        if (talkHistories === null) {
+          return;
+        }
+        const talkResponse = await sendTalkRequest(talkHistories, userId);
+        if (talkResponse) {
+          message = talkResponse.messages;
+          status = talkResponse.status;
+        }
+        if (status === "limit") {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "無料ユーザーは1日3回まで使用できます。",
+              },
+            ],
+          });
+          return;
+        }
+        if (status === "error") {
+          await client.replyMessage({
+            replyToken: e.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "エラーが発生しました。もう一度やり直してください",
+              },
+            ],
+          });
+          return;
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const messages: any[] = [];
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const choices: any[] = [];
+        for (let i = 0; i < message.length; i++) {
+          const index = i;
+          const noQuotationMessage = message[i]
+            .replace(/\「|\」/g, "")
+            .replace(/\n+$/, "");
+          choices.push({
+            type: "text",
+            text: `${index + 1}: ${noQuotationMessage}`,
+          });
+          messages.push({
+            type: "text",
+            text: noQuotationMessage,
+          });
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const buttonTemplateMessage: any = {
+          type: "template",
+          altText: "This is a buttons template",
+          template: {
+            type: "buttons",
+            imageAspectRatio: "rectangle",
+            imageSize: "cover",
+            title: "どのメッセージをコピーしますか？",
+            text: "番号を選んでください",
+            actions: [
+              {
+                type: "clipboard",
+                label: "1",
+                clipboardText: messages[0].text,
+              },
+              {
+                type: "clipboard",
+                label: "2",
+                clipboardText: messages[1].text,
+              },
+              {
+                type: "clipboard",
+                label: "3",
+                clipboardText: messages[2].text,
+              },
+            ],
+          },
+        };
+        choices.push(buttonTemplateMessage);
+        await client.replyMessage({
+          replyToken: e.replyToken,
+          messages: choices,
+        });
       });
 
       await Promise.all(eventPromises);

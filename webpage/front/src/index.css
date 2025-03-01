@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #F8F8F0;
+  text-align: center;
+  font-family: "Zen Kaku Gothic New", sans-serif;
+  line-height: 1.5;
+}
+
+.red-mark {
+  background: linear-gradient(transparent 85%, #ff7f7f 80%);
+}
+
+.blue-mark {
+  background: linear-gradient(transparent 85%, #00ffff 80%);
+}
+
+.yellow-mark {
+  background: linear-gradient(transparent 85%, yellow 80%);
+}
+.what {
+  text-align: right;
+}
+
+.example {
+  text-align: right;
+}

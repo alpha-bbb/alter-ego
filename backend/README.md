@@ -27,3 +27,17 @@ buf curl --protocol grpc --http2-prior-knowledge \
   }' \
   http://localhost:50051/backend.v1.BackendService/Talk
 ```
+
+## Stripe
+
+### 開発用のローカルwebhookを立てる
+
+```sh
+stripe listen --forward-to localhost:50080/stripe/webhook
+```
+
+## cmd
+
+```sh
+cd backend/cmd/clearstatecount && go run main.go
+```
