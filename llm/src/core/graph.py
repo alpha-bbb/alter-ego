@@ -1,5 +1,3 @@
-from typing import Literal
-
 from langgraph.graph import END, StateGraph
 
 from src.core.model import GraphState
@@ -27,24 +25,14 @@ class AlterEgo:
         workflow.set_entry_point("convert_history")
         workflow.add_edge("convert_history", "analyze_action")
         workflow.add_edge("convert_history", "analyze_style")
-        workflow.add_conditional_edges("analyze_action", self._route_after_analysis)
+        workflow.add_edge("analyze_action", "retrieve_knowledge")
 
-        workflow.add_edge("analyze_style", "generate_template")
-        workflow.add_edge("retrieve_knowledge", "generate_template")
-
+        workflow.add_edge(["analyze_style", "retrieve_knowledge"], "generate_template")
         workflow.add_edge("generate_template", "generate_responses")
+
         workflow.add_edge("generate_responses", END)
 
         self.graph = workflow.compile()
-
-    def _route_after_analysis(
-        self, state: GraphState
-    ) -> Literal["retrieve_knowledge", "generate_template"]:
-        """行動分析後のルーティング"""
-        if state.template_val.action_analysis.predicted_action == "お誘い":
-            return "retrieve_knowledge"
-
-        return "generate_template"
 
 
 # グラフのインスタンスを作成

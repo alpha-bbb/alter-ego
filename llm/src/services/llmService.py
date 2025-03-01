@@ -1,8 +1,9 @@
 import logging
 
 import grpc
-from llm.v1 import llm_pb2, llm_pb2_grpc
 from google.protobuf.json_format import MessageToDict
+
+from llm.v1 import llm_pb2, llm_pb2_grpc
 
 # from src.services.external_api.dify import call_dify_talk
 from src.core.graph import graph
@@ -42,7 +43,7 @@ class LlmServiceServicer(llm_pb2_grpc.LlmServiceServicer):
             messages = await graph.ainvoke({"talk_histories": histories})
 
             # レスポンスの作成
-            return llm_pb2.TalkResponse(message=messages["final_responses"])
+            return llm_pb2.TalkResponse(message=messages["final_responses"]["replies"])
 
         except Exception as e:
             logger.error(f"Error in Talk: {str(e)}", exc_info=True)
