@@ -27,7 +27,6 @@ export async function imageToTalkHistories(
   if (!imageWidth) {
     throw new Error("画像の横幅を取得できませんでした。");
   }
-  console.log(`画像の横幅: ${imageWidth}`);
 
   const imgBase64 = imageBuffer.toString("base64");
 
@@ -108,9 +107,10 @@ export async function imageToTalkHistories(
         });
       } else {
         // 指定範囲外の場合は警告を出して無視する
-        console.warn(
-          `バウンディングボックスの頂点座標が期待範囲外です。topLeftX: ${topLeftX}, topRightX: ${topRightX}`,
-        );
+        // Debug用で残している
+        // console.warn(
+        //   `バウンディングボックスの頂点座標が期待範囲外です。topLeftX: ${topLeftX}, topRightX: ${topRightX}`,
+        // );
       }
     }
   }

@@ -1,3 +1,4 @@
 logs
 gin-bin
 tmp
+.env.cmd
