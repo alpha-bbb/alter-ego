@@ -17,7 +17,7 @@ export const Privacy: FC = () => {
           <br />
           ・サブスクリプションの解約に必要な情報（ユーザーIDや契約情報）
           <br />
-          ・LINEのトーク履歴（LLMへの送信および会話の返信生成のため、一時的に使用し、本サービス上では保存は行いませんが、LLMのAPIにChatGPT,
+          ・LINEのトーク履歴（LLMへの送信および会話の返信生成のため、一時的に使用し、当サービス上では保存は行いませんが、LLMのAPIにChatGPT,
           Gemini, Claudeを使用しています）
           <br />
           <br />
