@@ -52,7 +52,14 @@ export const Home: FC = () => {
         </div>
         <div className="text-center">
           <p className="how text-base sm:text-lg">
-            QRコードからalter-egoを友達登録して
+            QRコードもしくは
+            <Link
+              to="https://lin.ee/95r3hTQ"
+              className="text-blue-500 hover:underline"
+            >
+              こちら
+            </Link>
+            からalter-egoを友達登録して
           </p>
           <p className="how mb-12 text-base sm:text-lg">
             トーク履歴を送ってみましょう！
