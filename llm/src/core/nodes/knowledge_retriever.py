@@ -1,5 +1,7 @@
 from typing import Any
+
 from langchain_core.runnables import RunnableConfig
+
 from src.core.model import GraphState, Knowledge
 from src.services.external_api.dify import call_dify_retrieve
 
@@ -67,7 +69,10 @@ async def retrieve_knowledge(
 
         return {
             "template_val": {
-                "knowledge": [Knowledge(content=doc) for doc in retrieved_docs]
+                "knowledge": [
+                    Knowledge(content=doc.get("segment", {}).get("content", ""))
+                    for doc in retrieved_docs.get("records", [])
+                ]
             }
         }
 
