@@ -11,6 +11,7 @@ import (
 
 type IStateCountRepository interface {
 	CreateInTx(tx any, entity entity.StateCount) error
+	GetAll() ([]entity.StateCount, error)
 	FindByUserID(userID string) (entity.StateCount, error)
 	IncrementCountInTx(tx any, userID string) error
 	Clear() error
@@ -38,6 +39,22 @@ func (r *StateCountRepository) CreateInTx(tx any, entity entity.StateCount) erro
 	return txAsserted.
 		Create(stateCount).
 		Error
+}
+
+func (r *StateCountRepository) GetAll() ([]entity.StateCount, error) {
+	var stateCounts []model.StateCount
+	if err := r.db.Model(&model.StateCount{}).
+		Preload("User").
+		Find(&stateCounts).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to retrieve state counts: %w", err)
+	}
+
+	var entities []entity.StateCount
+	for _, stateCount := range stateCounts {
+		entities = append(entities, stateCount.Entity())
+	}
+	return entities, nil
 }
 
 func (r *StateCountRepository) FindByUserID(userID string) (entity.StateCount, error) {
