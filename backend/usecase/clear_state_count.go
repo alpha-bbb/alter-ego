@@ -18,9 +18,9 @@ func NewClearStateCountUseCase(stateCountRepository repository.IStateCountReposi
 }
 
 func (c ClearStateCountUseCase) Execute() ([]entity.StateCount, error) {
-	statusCounts, err := c.stateCountRepository.GetAll()
+	stateCounts, err := c.stateCountRepository.GetAll()
 	if err != nil {
 		return []entity.StateCount{}, err
 	}
-	return statusCounts, c.stateCountRepository.Clear()
+	return stateCounts, c.stateCountRepository.Clear()
 }
