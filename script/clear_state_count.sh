@@ -21,7 +21,7 @@ while true; do
     sleep_seconds=$((next_midnight - now))
     echo "現在: $(date). 次の0時まで ${sleep_seconds} 秒待機します。"
 
-    sleep 5
+    sleep $sleep_seconds
 
     cd "$TARGET_DIR" || {
         echo "ディレクトリ移動に失敗しました"
