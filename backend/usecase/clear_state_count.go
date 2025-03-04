@@ -1,9 +1,12 @@
 package usecase
 
-import "github.com/alpha-bbb/alter-ego/backend/database/repository"
+import (
+	"github.com/alpha-bbb/alter-ego/backend/database/repository"
+	"github.com/alpha-bbb/alter-ego/backend/entity"
+)
 
 type IClearStateCountUseCase interface {
-	Execute() error
+	Execute() ([]entity.StateCount, error)
 }
 
 type ClearStateCountUseCase struct {
@@ -14,6 +17,10 @@ func NewClearStateCountUseCase(stateCountRepository repository.IStateCountReposi
 	return &ClearStateCountUseCase{stateCountRepository: stateCountRepository}
 }
 
-func (c ClearStateCountUseCase) Execute() error {
-	return c.stateCountRepository.Clear()
+func (c ClearStateCountUseCase) Execute() ([]entity.StateCount, error) {
+	statusCounts, err := c.stateCountRepository.GetAll()
+	if err != nil {
+		return []entity.StateCount{}, err
+	}
+	return statusCounts, c.stateCountRepository.Clear()
 }
