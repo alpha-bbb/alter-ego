@@ -9,7 +9,7 @@ sudo certbot certonly --webroot -w html -d alter-ego.fuu.jp -d api.line.alter-eg
 ## Let's Encryptのsslにドメインを追加
 
 ```sh
-sudo certbot certonly --webroot -w html --force-renew --cert-name fuu.jp -d alter-ego.fuu.jp -d api.line.alter-ego.fuu.jp -d dify.alter-ego.fuu.jp -d api.backend.alter-ego.fuu.jp
+sudo certbot certonly --webroot -w html --force-renew --cert-name alter-ego.fuu.jp -d alter-ego.fuu.jp -d api.line.alter-ego.fuu.jp -d dify.alter-ego.fuu.jp -d api.backend.alter-ego.fuu.jp
 ```
 
 ## Dify用basic認証ファイルの生成

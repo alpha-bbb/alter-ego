@@ -28,5 +28,5 @@ while true; do
         exit 1
     }
     # 実行対象のコマンドを実行
-    /usr/local/go/bin/go run main.go >>"$LOG_DIR/clear_state_count.log" 2>&1
+    go run main.go >>"$LOG_DIR/clear_state_count.log" 2>&1
 done
